@@ -6,6 +6,11 @@ const { app } = require('electron');
 let db = null;
 let dbType = 'mysql'; // 'mysql' or 'sqlite'
 
+// Log level control
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
+const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
+const shouldLog = (level) => logLevels[level] >= logLevels[LOG_LEVEL];
+
 const DB_CONFIG = {
   host: process.env.MYSQL_HOST || 'localhost',
   user: process.env.MYSQL_USER || 'root',
@@ -15,38 +20,35 @@ const DB_CONFIG = {
 
 async function initDatabase() {
   try {
-    // First, connect without specifying database to check if it exists
-    console.log('[Database] Attempting MySQL connection to', DB_CONFIG.host, 'as user', DB_CONFIG.user);
+    // First, connect to MySQL server without specifying database to create it if needed
     const tempConnection = await mysql.createConnection({
       host: DB_CONFIG.host,
       user: DB_CONFIG.user,
-      password: DB_CONFIG.password,
-      waitForConnections: true,
-      connectionLimit: 1,
-      queueLimit: 0
+      password: DB_CONFIG.password
     });
     
     // Create database if it doesn't exist
-    console.log('[Database] Creating database if not exists:', DB_CONFIG.database);
-    await tempConnection.execute(`CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.database}`);
-    console.log('[Database] MySQL database ensured:', DB_CONFIG.database);
+    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.database}`);
+    if (shouldLog('info')) console.log(`[Database] Database '${DB_CONFIG.database}' ready.`);
     await tempConnection.end();
     
-    // Now connect to the specific database
-    console.log('[Database] Connecting to database:', DB_CONFIG.database);
+    // Now connect to the actual database
     const connection = await mysql.createConnection(DB_CONFIG);
+    
+    // Set up MySQL schema
+    await setupMysqlSchema(connection);
+    
     await connection.end();
     dbType = 'mysql';
-    console.log('[Database] ✓ Connected to MySQL successfully.');
+    if (shouldLog('info')) console.log('[Database] Connected to MySQL successfully.');
   } catch (error) {
-    console.warn('[Database] MySQL connection failed:', error.code, '-', error.message);
-    console.warn('[Database] Falling back to SQLite');
+    console.warn('[Database] MySQL connection failed, falling back to SQLite:', error.message);
     dbType = 'sqlite';
     const dbPath = path.join(app.getPath('userData'), 'app.db');
-    console.log('[Database] Using SQLite database at:', dbPath);
+    if (shouldLog('info')) console.log('[Database] Using SQLite database at:', dbPath);
     db = new BetterSqlite3(dbPath);
     setupSqliteSchema();
-    console.log('[Database] SQLite schema initialized.');
+    if (shouldLog('info')) console.log('[Database] SQLite schema initialized.');
   }
 
   // Optionally seed database if SEED_DB environment variable is set
@@ -69,8 +71,21 @@ function setupSqliteSchema() {
   `);
 }
 
+async function setupMysqlSchema(connection) {
+  // Example schema - DELETE THIS and replace with your application's tables
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  if (shouldLog('info')) console.log('[Database] MySQL schema initialized.');
+}
+
 async function seedDatabase() {
-  console.log('[Database] Seeding database with sample data...');
+  if (shouldLog('info')) console.log('[Database] Seeding database with sample data...');
   
   try {
     // Clear existing data
