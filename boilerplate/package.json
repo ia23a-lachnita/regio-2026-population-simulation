@@ -10,6 +10,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev:seed": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && cross-env SEED_DB=true electron .\"",
     "electron:build": "pnpm run build && electron-builder"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
     "electron": "^29.1.6",
     "electron-builder": "^24.13.3",
     "electron-rebuild": "^3.2.9",

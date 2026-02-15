@@ -7,10 +7,10 @@ let db = null;
 let dbType = 'mysql'; // 'mysql' or 'sqlite'
 
 const DB_CONFIG = {
-  host: 'localhost',
-  user: 'root',
-  password: '', // Default competition password often empty or 'root'
-  database: 'competition_db'
+  host: process.env.MYSQL_HOST || 'localhost',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || '',
+  database: process.env.MYSQL_DATABASE || 'competition_db'
 };
 
 async function initDatabase() {
@@ -29,6 +29,11 @@ async function initDatabase() {
     setupSqliteSchema();
     console.log('[Database] SQLite schema initialized.');
   }
+
+  // Optionally seed database if SEED_DB environment variable is set
+  if (process.env.SEED_DB === 'true' || process.env.SEED_DB === '1') {
+    await seedDatabase();
+  }
 }
 
 function setupSqliteSchema() {
@@ -43,6 +48,39 @@ function setupSqliteSchema() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+}
+
+async function seedDatabase() {
+  console.log('[Database] Seeding database with sample data...');
+  
+  try {
+    // Clear existing data
+    if (dbType === 'mysql') {
+      const connection = await mysql.createConnection(DB_CONFIG);
+      await connection.execute('DELETE FROM items');
+      await connection.end();
+    } else {
+      db.exec('DELETE FROM items');
+    }
+
+    // Insert seed data
+    const seedItems = [
+      { name: 'Sample Item 1', description: 'This is a sample item for testing' },
+      { name: 'Sample Item 2', description: 'Another sample item' },
+      { name: 'Sample Item 3', description: 'Third sample item' }
+    ];
+
+    for (const item of seedItems) {
+      await query(
+        'INSERT INTO items (name, description) VALUES (?, ?)',
+        [item.name, item.description]
+      );
+    }
+
+    console.log('[Database] Successfully seeded database with', seedItems.length, 'items');
+  } catch (error) {
+    console.error('[Database] Error seeding database:', error);
+  }
 }
 
 async function query(sql, params = []) {
@@ -65,5 +103,6 @@ async function query(sql, params = []) {
 
 module.exports = {
   initDatabase,
-  query
+  query,
+  seedDatabase
 };
