@@ -16,24 +16,31 @@ const DB_CONFIG = {
 async function initDatabase() {
   try {
     // First, connect without specifying database to check if it exists
+    console.log('[Database] Attempting MySQL connection to', DB_CONFIG.host, 'as user', DB_CONFIG.user);
     const tempConnection = await mysql.createConnection({
       host: DB_CONFIG.host,
       user: DB_CONFIG.user,
-      password: DB_CONFIG.password
+      password: DB_CONFIG.password,
+      waitForConnections: true,
+      connectionLimit: 1,
+      queueLimit: 0
     });
     
     // Create database if it doesn't exist
+    console.log('[Database] Creating database if not exists:', DB_CONFIG.database);
     await tempConnection.execute(`CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.database}`);
     console.log('[Database] MySQL database ensured:', DB_CONFIG.database);
     await tempConnection.end();
     
     // Now connect to the specific database
+    console.log('[Database] Connecting to database:', DB_CONFIG.database);
     const connection = await mysql.createConnection(DB_CONFIG);
     await connection.end();
     dbType = 'mysql';
-    console.log('[Database] Connected to MySQL successfully.');
+    console.log('[Database] ✓ Connected to MySQL successfully.');
   } catch (error) {
-    console.warn('[Database] MySQL connection failed, falling back to SQLite:', error.message);
+    console.warn('[Database] MySQL connection failed:', error.code, '-', error.message);
+    console.warn('[Database] Falling back to SQLite');
     dbType = 'sqlite';
     const dbPath = path.join(app.getPath('userData'), 'app.db');
     console.log('[Database] Using SQLite database at:', dbPath);
