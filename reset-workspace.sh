@@ -50,8 +50,7 @@ fi
 
 # Create workspace with boilerplate
 echo "  Copying boilerplate to workspace..."
-cp -r boilerplate workspace
-rm -rf workspace/node_modules workspace/dist
+rsync -a --exclude='node_modules' --exclude='dist' --exclude='out' --exclude='release' boilerplate/ workspace/
 echo "  ✓ Boilerplate copied"
 
 # Create context directory structure

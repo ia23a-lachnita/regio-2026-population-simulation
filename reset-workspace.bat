@@ -46,9 +46,11 @@ if not exist boilerplate (
 )
 
 echo   Copying boilerplate to workspace...
-xcopy /E /I /Y /Q boilerplate workspace > nul
-if exist workspace\node_modules rmdir /S /Q workspace\node_modules
-if exist workspace\dist rmdir /S /Q workspace\dist
+robocopy boilerplate workspace /E /XD node_modules dist out release .vscode > nul
+if errorlevel 8 (
+  echo   ERROR: Failed to copy boilerplate
+  exit /b 1
+)
 echo   OK Boilerplate copied
 
 echo   Creating .context directory...

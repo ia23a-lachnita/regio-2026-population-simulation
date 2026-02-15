@@ -15,7 +15,19 @@ const DB_CONFIG = {
 
 async function initDatabase() {
   try {
-    // Attempt MySQL connection
+    // First, connect without specifying database to check if it exists
+    const tempConnection = await mysql.createConnection({
+      host: DB_CONFIG.host,
+      user: DB_CONFIG.user,
+      password: DB_CONFIG.password
+    });
+    
+    // Create database if it doesn't exist
+    await tempConnection.execute(`CREATE DATABASE IF NOT EXISTS ${DB_CONFIG.database}`);
+    console.log('[Database] MySQL database ensured:', DB_CONFIG.database);
+    await tempConnection.end();
+    
+    // Now connect to the specific database
     const connection = await mysql.createConnection(DB_CONFIG);
     await connection.end();
     dbType = 'mysql';
