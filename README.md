@@ -18,7 +18,7 @@ Autonomous system for completing programming competitions with **~5 minutes of h
 ## For AI Agents
 
 **Claude Code users:** Read `CLAUDE.md` or just type `START`
-**Gemini CLI users:** Read `AI_INSTRUCTIONS.md` or just type `START`
+**Gemini CLI users:** Read `GEMINI.md` or just type `START`
 
 Both files contain identical instructions for autonomous competition completion.
 
@@ -92,8 +92,7 @@ competition/
 ├── boilerplate/              # Clean template (don't modify)
 ├── utils/                    # Python/Node.js tools
 ├── CLAUDE.md                 # AI instructions (Claude Code)
-├── AI_INSTRUCTIONS.md        # Same as CLAUDE.md
-├── GEMINI.md                 # Technical patterns reference
+├── GEMINI.md                 # Same as CLAUDE.md
 └── reset-workspace.sh/bat    # Reset script
 ```
 
@@ -187,14 +186,7 @@ START
 
 ## Technical Details
 
-See `GEMINI.md` for:
-- Boilerplate architecture
-- Database patterns
-- UI component usage
-- Code style guide
-- CRUD examples
-
-See `CLAUDE.md` or `AI_INSTRUCTIONS.md` for complete AI workflow.
+See `CLAUDE.md` or `GEMINI.md` for complete AI workflow.
 
 ---
 
