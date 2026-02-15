@@ -6,6 +6,10 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 // Suppress Electron security warnings in development
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
+// Disable GPU acceleration issues and autofill errors
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+app.commandLine.appendSwitch('disable-dev-shm-usage');
+
 // Log level: 'debug', 'info', 'warn', 'error' (default: 'info')
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 const logLevels = { debug: 0, info: 1, warn: 2, error: 3 };
@@ -19,10 +23,12 @@ async function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false, // Don't show until ready
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      devTools: true,
     },
   });
 
@@ -37,6 +43,18 @@ async function createWindow() {
 
   win.webContents.on('did-finish-load', () => {
     if (shouldLog('info')) console.log('[Main] Window finished loading');
+    // Show and focus window after content is loaded
+    win.show();
+    win.focus();
+  });
+
+  // Suppress DevTools autofill errors
+  win.webContents.on('devtools-opened', () => {
+    win.webContents.devToolsWebContents?.executeJavaScript(`
+      DevToolsAPI.getPreferences().then(prefs => {
+        prefs.disablePausedStateOverlay = true;
+      });
+    `).catch(() => {});
   });
 }
 

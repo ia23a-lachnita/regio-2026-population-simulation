@@ -14,6 +14,8 @@ interface Item {
 export default function HomePage() {
   const [items, setItems] = useState<Item[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [newItemName, setNewItemName] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
 
@@ -48,10 +50,17 @@ export default function HomePage() {
   };
 
   const handleDeleteItem = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    setItemToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (itemToDelete === null) return;
 
     try {
-      await dbQuery('DELETE FROM items WHERE id = ?', [id]);
+      await dbQuery('DELETE FROM items WHERE id = ?', [itemToDelete]);
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
       loadItems();
     } catch (error) {
       console.error('Failed to delete item:', error);
@@ -141,6 +150,32 @@ export default function HomePage() {
             />
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        title="Confirm Delete"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => {
+              setIsDeleteModalOpen(false);
+              setItemToDelete(null);
+            }}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-slate-300">
+          Are you sure you want to delete this item? This action cannot be undone.
+        </p>
       </Modal>
     </div>
   );
