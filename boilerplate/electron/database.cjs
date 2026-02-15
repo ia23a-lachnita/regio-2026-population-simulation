@@ -19,13 +19,15 @@ async function initDatabase() {
     const connection = await mysql.createConnection(DB_CONFIG);
     await connection.end();
     dbType = 'mysql';
-    console.log('Connected to MySQL successfully.');
+    console.log('[Database] Connected to MySQL successfully.');
   } catch (error) {
-    console.warn('MySQL connection failed, falling back to SQLite:', error.message);
+    console.warn('[Database] MySQL connection failed, falling back to SQLite:', error.message);
     dbType = 'sqlite';
     const dbPath = path.join(app.getPath('userData'), 'app.db');
+    console.log('[Database] Using SQLite database at:', dbPath);
     db = new BetterSqlite3(dbPath);
     setupSqliteSchema();
+    console.log('[Database] SQLite schema initialized.');
   }
 }
 
