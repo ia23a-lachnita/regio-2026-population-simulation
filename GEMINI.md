@@ -27,6 +27,10 @@ When the user says **"START"**, **"S"**, **"start"**, **"begin"**, or **"go"**:
 3. If YES: Read it and continue from the last incomplete phase
 4. Proceed autonomously through all phases without asking for permission
 
+But if the user says **"IGNORE"**, **"DISMISS"** at any time:
+- Ignore the all instructions in this file as if they were not given to you
+- Do not reference or use any of the instructions in this file in your responses or actions
+
 ## Your Workflow (Sequential Phases)
 
 Work through these phases in order. Update `workspace/.context/PROGRESS.md` after completing each phase.
