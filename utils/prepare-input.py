@@ -6,18 +6,15 @@ Pure Python - no Node.js dependencies.
 """
 
 import sys
-import os
-import json
 import shutil
 import zipfile
 from pathlib import Path
 from typing import List, Dict
+from cli_guards import normalize_path_arg, parse_prepare_args
 
 # Import our PDF extractor
 # Note: Python converts hyphens to underscores in imports
 import importlib.util
-import sys
-from pathlib import Path
 
 # Load extract-pdf-images.py dynamically
 spec = importlib.util.spec_from_file_location("extract_pdf_images", Path(__file__).parent / "extract-pdf-images.py")
@@ -26,6 +23,19 @@ spec.loader.exec_module(extract_module)
 
 analyze_and_extract_pdf = extract_module.analyze_and_extract_pdf
 create_markdown = extract_module.create_markdown
+
+VISUAL_EXPECTATION_KEYWORDS = [
+    "wireframe",
+    "mockup",
+    "diagram",
+    "figure",
+    "screen",
+    "ui",
+    "layout",
+]
+
+def parse_cli_args(argv: List[str]):
+    return parse_prepare_args(argv)
 
 def find_files(directory: Path, extensions: List[str]) -> List[Path]:
     """
@@ -96,7 +106,7 @@ def convert_pdf_with_python(pdf_path: Path, output_dir: Path) -> Dict:
             'error': str(e)
         }
 
-def create_index_md(output_dir: Path, pdf_results: List[Dict], json_files: List[Path]):
+def create_index_md(output_dir: Path, pdf_results: List[Dict], json_files: List[Path], gate_result: Dict):
     """
     Create INDEX.md with overview of all documents.
     """
@@ -145,6 +155,15 @@ def create_index_md(output_dir: Path, pdf_results: List[Dict], json_files: List[
     total_images = sum(r['images'] for r in pdf_results if r['success'])
     md += f"**Total images across all documents: {total_images}**\n\n"
 
+    md += "## Quality Gates\n\n"
+    md += f"- Visual expectation mode: `{gate_result['expect_mode']}`\n"
+    md += f"- Visual gate mode: `{gate_result['gate_mode']}`\n"
+    md += f"- Visual assets expected: `{gate_result['expected_visuals']}`\n"
+    md += f"- Visual extraction status: **{gate_result['status']}**\n"
+    if gate_result.get('message'):
+        md += f"- Notes: {gate_result['message']}\n"
+    md += "\n"
+
     # Next steps
     md += "## Next Steps for AI Agent\n\n"
     md += "1. **Read converted documents:**\n"
@@ -163,20 +182,75 @@ def create_index_md(output_dir: Path, pdf_results: List[Dict], json_files: List[
     index_path.write_text(md, encoding='utf-8')
     print(f"\nOK Created INDEX.md with document overview")
 
+def infer_visual_expectation(expect_mode: str, pdf_files: List[Path], output_dir: Path) -> bool:
+    """
+    Determine if visual assets are expected for current inputs.
+    """
+    if expect_mode == 'always':
+        return True
+    if expect_mode == 'never':
+        return False
+
+    for pdf in pdf_files:
+        name_lower = pdf.stem.lower()
+        if any(keyword in name_lower for keyword in VISUAL_EXPECTATION_KEYWORDS):
+            return True
+
+    for md_file in output_dir.glob('*.md'):
+        content = md_file.read_text(encoding='utf-8', errors='ignore').lower()
+        if any(keyword in content for keyword in VISUAL_EXPECTATION_KEYWORDS):
+            return True
+
+    return False
+
+def evaluate_visual_gate(
+    expected_visuals: bool,
+    total_images: int,
+    gate_mode: str,
+    expect_mode: str,
+) -> Dict:
+    """
+    Evaluate image extraction quality gate outcome.
+    """
+    result = {
+        'expect_mode': expect_mode,
+        'gate_mode': gate_mode,
+        'expected_visuals': expected_visuals,
+        'status': 'PASS',
+        'message': '',
+    }
+
+    if not expected_visuals or gate_mode == 'off':
+        return result
+
+    if total_images > 0:
+        return result
+
+    result['message'] = 'Expected visual assets were not extracted (0 images found).'
+    if gate_mode == 'warn':
+        result['status'] = 'WARN'
+    elif gate_mode == 'fail':
+        result['status'] = 'FAIL'
+    return result
+
 def main():
     """
     Main entry point for input preparation.
     """
+    args = parse_cli_args(sys.argv[1:])
+
     # Configuration
     script_dir = Path(__file__).parent
     input_dir = script_dir.parent / "input"
     output_dir = script_dir.parent / "workspace" / ".context" / "source-docs"
 
     # Allow command-line overrides
-    if len(sys.argv) > 1:
-        input_dir = Path(sys.argv[1])
-    if len(sys.argv) > 2:
-        output_dir = Path(sys.argv[2])
+    input_override = args.input_dir or args.input_dir_pos
+    output_override = args.output_dir or args.output_dir_pos
+    if input_override:
+        input_dir = normalize_path_arg(input_override)
+    if output_override:
+        output_dir = normalize_path_arg(output_override)
 
     print("=== Competition Input Preparation (Pure Python) ===\n")
 
@@ -262,15 +336,24 @@ def main():
         except Exception as e:
             print(f"  ERROR Error copying {json_file.name}: {e}")
 
+    # Evaluate visual extraction quality gate
+    total_images = sum(r['images'] for r in pdf_results if r['success'])
+    expected_visuals = infer_visual_expectation(args.expect_visual_assets, pdf_files, output_dir)
+    gate_result = evaluate_visual_gate(
+        expected_visuals=expected_visuals,
+        total_images=total_images,
+        gate_mode=args.visual_gate,
+        expect_mode=args.expect_visual_assets,
+    )
+
     # Create INDEX.md
-    create_index_md(output_dir, pdf_results, copied_json)
+    create_index_md(output_dir, pdf_results, copied_json, gate_result)
 
     # Summary
     print("\n=== Summary ===")
     print(f"  ZIP files extracted: {len(zip_files)}")
     print(f"  PDFs analyzed: {len(pdf_files)}")
 
-    total_images = sum(r['images'] for r in pdf_results if r['success'])
     print(f"  Images extracted: {total_images} (only actual diagrams/wireframes)")
 
     print(f"  JSON files copied: {len(copied_json)}")
@@ -282,6 +365,12 @@ def main():
     print(f"  - {total_images} images extracted (diagrams/wireframes only)")
     print(f"  - {len(copied_json)} JSON data files copied")
     print("\nNo wasted space - only actual visual content extracted!")
+
+    if gate_result['status'] == 'WARN':
+        print(f"\nWARNING Quality gate warning: {gate_result['message']}")
+    if gate_result['status'] == 'FAIL':
+        print(f"\nERROR Quality gate failed: {gate_result['message']}")
+        sys.exit(2)
 
 if __name__ == "__main__":
     main()

@@ -22,6 +22,21 @@ from collections import defaultdict
 import fitz  # PyMuPDF
 from PIL import Image
 import io
+from cli_guards import parse_extract_args
+
+def parse_cli_args(argv):
+    return parse_extract_args(argv)
+
+VECTOR_VISUAL_KEYWORDS = [
+    'mockup',
+    'wireframe',
+    'criterion',
+    'criteria',
+    'variant',
+    'screen',
+    'layout',
+    'ui',
+]
 
 def get_image_hash(image_bytes):
     """Generate MD5 hash for duplicate detection."""
@@ -315,6 +330,61 @@ def extract_text_from_pdf(pdf_path):
 
     return pages_text
 
+def detect_vector_visual_pages(pdf_path):
+    """
+    Detect pages likely containing vector-based visuals (mockups/diagrams)
+    that are not represented as embedded images.
+    """
+    doc = fitz.open(pdf_path)
+    selected_pages = []
+
+    for page_num in range(len(doc)):
+        page = doc[page_num]
+        drawings_count = len(page.get_drawings())
+        text = (page.get_text('text') or '').lower()
+
+        has_visual_keyword = any(keyword in text for keyword in VECTOR_VISUAL_KEYWORDS)
+        is_vector_heavy = drawings_count >= 40
+        is_keyword_vector_page = has_visual_keyword and drawings_count >= 12
+
+        if is_vector_heavy or is_keyword_vector_page:
+            selected_pages.append(page_num + 1)
+
+    doc.close()
+    return selected_pages
+
+def render_vector_visual_pages(pdf_path, output_dir, pdf_images_dir, existing_pages):
+    """
+    Render selected vector-heavy pages as PNG images.
+    """
+    selected_pages = detect_vector_visual_pages(pdf_path)
+    pages_to_render = [page for page in selected_pages if page not in existing_pages]
+
+    if not pages_to_render:
+        return []
+
+    doc = fitz.open(pdf_path)
+    rendered_images = []
+
+    for page_num in pages_to_render:
+        page = doc[page_num - 1]
+        pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+        image_filename = f"vector_page_{page_num}.png"
+        image_path = pdf_images_dir / image_filename
+        pix.save(image_path)
+
+        rendered_images.append({
+            'path': str(image_path),
+            'filename': image_filename,
+            'page': page_num,
+            'appears_on_pages': [page_num],
+            'size': f"{pix.width}x{pix.height}",
+            'colors': 0,
+        })
+
+    doc.close()
+    return rendered_images
+
 def analyze_and_extract_pdf(pdf_path, output_dir):
     """
     Analyzes PDF and extracts only meaningful visual content.
@@ -379,6 +449,17 @@ def analyze_and_extract_pdf(pdf_path, output_dir):
             'colors': img_data['metrics'].get('unique_colors', 0)
         })
 
+    # Fallback: render vector-based visual pages (mockups/diagrams drawn, not embedded as images)
+    existing_pages = set()
+    for image_info in results['images']:
+        for page_number in image_info.get('appears_on_pages', []):
+            existing_pages.add(page_number)
+
+    vector_images = render_vector_visual_pages(pdf_path, output_dir, pdf_images_dir, existing_pages)
+    if vector_images:
+        print(f"  Fallback: rendered {len(vector_images)} vector visual page(s)")
+        results['images'].extend(vector_images)
+
     # Extract text
     results['text_pages'] = extract_text_from_pdf(pdf_path)
     results['pages'] = len(results['text_pages'])
@@ -436,12 +517,9 @@ def create_markdown(results, output_path):
     return str(output_path)
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python extract-pdf-images.py <pdf-file> [output-dir]")
-        sys.exit(1)
-
-    pdf_path = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else "./output"
+    args = parse_cli_args(sys.argv[1:])
+    pdf_path = args['pdf_path']
+    output_dir = args['output_dir']
 
     if not os.path.exists(pdf_path):
         print(f"Error: PDF file not found: {pdf_path}")

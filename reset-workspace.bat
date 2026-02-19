@@ -4,7 +4,10 @@ echo.
 echo This will COMPLETELY RESET the workspace to initial state.
 echo All work in workspace/ and delivery/ will be DELETED!
 echo.
-set /p confirm="Continue? (y/N): "
+set "confirm="
+if /i "%~1"=="--yes" set "confirm=y"
+if /i "%~1"=="-y" set "confirm=y"
+if "%confirm%"=="" set /p confirm="Continue? (y/N): "
 if /i not "%confirm%"=="y" (
   echo Reset cancelled.
   exit /b 1
@@ -106,7 +109,7 @@ echo [3/4] Creating PROGRESS.md...
   echo - [ ] Run verification (pnpm run verify:win^)
   echo - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe^)
   echo - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders^)
-  echo - [ ] Perform one manual core action (create/edit/delete or equivalent^)
+  echo - [ ] Run automated UI acceptance tests for analysis + criterion lifecycle
   echo - [ ] Confirm DB file exists after launch
   echo - [ ] Create delivery/ structure
   echo - [ ] Generate documentation
@@ -118,7 +121,10 @@ echo [3/4] Creating PROGRESS.md...
   echo   - launch_timestamp:
   echo   - db_path:
   echo   - db_exists:
-  echo   - manual_action:
+  echo   - ui_acceptance_command:
+  echo   - ui_acceptance_exit_code:
+  echo   - ui_acceptance_report:
+  echo   - ui_acceptance_scenarios:
   echo   - error_summary:
   echo - Status: NOT STARTED
 ) > workspace\.context\PROGRESS.md

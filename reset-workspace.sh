@@ -5,12 +5,17 @@ echo ""
 echo "This will COMPLETELY RESET the workspace to initial state."
 echo "All work in workspace/ and delivery/ will be DELETED!"
 echo ""
-read -p "Continue? (y/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]
-then
-    echo "Reset cancelled."
-    exit 1
+confirm=""
+if [[ "${1:-}" == "--yes" || "${1:-}" == "-y" ]]; then
+  confirm="y"
+else
+  read -p "Continue? (y/N): " -n 1 -r
+  echo
+  confirm="$REPLY"
+fi
+if [[ ! $confirm =~ ^[Yy]$ ]]; then
+  echo "Reset cancelled."
+  exit 1
 fi
 
 echo ""
@@ -120,7 +125,7 @@ Update this file after completing each phase!
 - [ ] Run verification (pnpm run verify:win)
 - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe)
 - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders)
-- [ ] Perform one manual core action (create/edit/delete or equivalent)
+- [ ] Run automated UI acceptance tests for analysis + criterion lifecycle
 - [ ] Confirm DB file exists after launch
 - [ ] Create delivery/ structure
 - [ ] Generate documentation
@@ -132,7 +137,10 @@ Update this file after completing each phase!
   - launch_timestamp: 
   - db_path: 
   - db_exists: 
-  - manual_action: 
+  - ui_acceptance_command: 
+  - ui_acceptance_exit_code: 
+  - ui_acceptance_report: 
+  - ui_acceptance_scenarios: 
   - error_summary: 
 - Status: NOT STARTED
 EOF

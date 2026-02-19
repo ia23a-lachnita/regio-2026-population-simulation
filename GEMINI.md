@@ -542,7 +542,7 @@ CRITICAL: **Build success does NOT mean completion.**
 YOU ARE NOT DONE UNTIL ALL are true:
 1. `pnpm run verify:win` succeeds (exit code 0)
 2. Packaged executable launches without startup error
-3. Basic functionality is tested (at least one create/edit/delete or equivalent core action)
+3. Automated UI acceptance tests pass for critical workflows (analysis + criterion lifecycle)
 4. Database file exists after launch
 5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
 
@@ -557,13 +557,30 @@ Run these checks in order:
   ```bash
   cd workspace && pnpm run verify:win
   ```
-  - This command must build, package, and smoke-test the executable.
+  - This command must build, run automated UI acceptance checks, package, and smoke-test the executable.
   - If this script does not exist, create it in Phase 4 before continuing.
 
-3. **Manual core action smoke test (required)**
-  - Launch packaged app from `workspace/release/win-unpacked/*.exe`
-  - Perform one core workflow action (domain-specific)
-  - Confirm no crash/error dialog
+3. **Automated UI acceptance gate (required)**
+  - Add and run UI tests that validate all critical workflows:
+    - create analysis
+    - open analysis
+    - edit analysis
+    - delete analysis
+    - create criterion
+    - edit criterion
+    - delete criterion
+    - create/save numerical criterion value
+    - verify numerical criterion value persists after reload
+  - Persist test evidence to `workspace/.context/UI_ACCEPTANCE.md`
+  - Do not substitute this gate with manual checks unless automation is technically impossible.
+  - **Implementation location (instruction-first):**
+    - Treat this instruction file as the source of truth for acceptance automation behavior.
+    - Do not rely on `README.md` as the only place for acceptance/test-contract requirements.
+  - **Template-safe acceptance pattern (generic):**
+    - Use a reusable script (for example `scripts/ui-acceptance.mjs`) that is domain-agnostic.
+    - Parameterize domain specifics via config/artifact inputs (selectors, entity names, required workflows), not hard-coded app names.
+    - Enforce reliability defaults: isolated user data dir, explicit dev server URL/port, deterministic evidence output.
+    - Write acceptance evidence to `workspace/.context/UI_ACCEPTANCE.md` and fail the gate if any required scenario fails.
 
 4. **Naming validation (required)**
   - Set production app name before final packaging (for example in `package.json` `name`, `productName`, and `build.win.executableName` where applicable)
@@ -586,6 +603,11 @@ Run these checks in order:
   - Create `delivery/README.md` with install/run instructions
 
 **If ANY check fails:** debug and fix; do not mark Phase 6 complete.
+
+**Error-burst policy (required):**
+- If 3 consecutive tool/script failures occur in the same phase, stop repeating the same approach.
+- Switch strategy (different tool/command/path), log the change in PROGRESS.md, and retry.
+- If failures continue after 2 strategy switches, mark the phase as BLOCKED with explicit root cause and stop claiming completion.
 
 **Update PROGRESS.md with evidence, then mark all phases complete.**
 
@@ -828,7 +850,9 @@ Required Phase 6 evidence:
 - Executable and installer names verified (real app name)
 - Launch timestamp
 - Database file path and existence check
-- Basic functionality action tested + result
+- Automated UI acceptance command + exit code
+- Automated UI acceptance report path (`workspace/.context/UI_ACCEPTANCE.md`)
+- Automated UI acceptance scenarios passed (analysis/criterion lifecycle, including numerical persistence)
 - Error summary (`NONE` if no errors)
 
 Example:
