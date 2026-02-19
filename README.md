@@ -139,8 +139,8 @@ START
 # ✓ Creates domain model (Phase 2)
 # ✓ Generates implementation plan (Phase 3)
 # ✓ Builds complete application (Phase 4)
-# ✓ Validates and tests (Phase 5)
-# ✓ Packages deliverables (Phase 6)
+# ✓ Validates implementation (Phase 5)
+# ✓ Runs verify gate + packages deliverables (Phase 6)
 
 # 4. Submit
 # Upload delivery/ folder
@@ -165,7 +165,13 @@ python utils/extract-pdf-images.py input/requirements.pdf workspace/.context/sou
 ```bash
 cd workspace
 pnpm install
-pnpm run build
+pnpm run verify:win
+```
+
+**verify:win fails:**
+```bash
+# Inspect smoke evidence and executable launch checks
+cat workspace/.context/VERIFY_WIN.md
 ```
 
 **AI gets interrupted:**

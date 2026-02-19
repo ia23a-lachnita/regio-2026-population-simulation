@@ -35,6 +35,8 @@ But if the user says **"IGNORE"**, **"DISMISS"** at any time:
 
 Work through these phases in order. Update `workspace/.context/PROGRESS.md` after completing each phase.
 
+**Validation Contract (canonical):** Keep Phase 6 + Progress Tracking wording in `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` identical.
+
 ### Phase 0: Prepare Input Files (CRITICAL)
 **Input:** `input/` folder (may contain ZIP files and PDFs)
 **Output:** `workspace/.context/source-docs/` (extracted markdown + images)
@@ -531,68 +533,61 @@ Follow the implementation plan step-by-step. Use patterns from TECHNICAL_CONTEXT
 
 ---
 
-### Phase 6: Validate
+### Phase 6: Validate & Package (HARD GATE)
 **Input:** Implemented workspace
-**Output:** Validation report in PROGRESS.md
+**Output:** Validation evidence in PROGRESS.md + `delivery/` folder
 
-Run these checks:
+CRITICAL: **Build success does NOT mean completion.**
 
-1. **Build Check**
-   ```bash
-   cd workspace && pnpm run build
-   ```
-   Must succeed without errors
+YOU ARE NOT DONE UNTIL ALL are true:
+1. `pnpm run verify:win` succeeds (exit code 0)
+2. Packaged executable launches without startup error
+3. Basic functionality is tested (at least one create/edit/delete or equivalent core action)
+4. Database file exists after launch
+5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
 
-2. **Schema Check**
-   - Open `workspace/electron/database.js`
-   - Verify no "items" table
-   - Verify competition tables exist
+Run these checks in order:
 
-3. **App Title Check**
-   - Open `workspace/src/App.tsx`
-   - Verify title is NOT "Competition App"
+1. **Install dependencies (if needed)**
+  ```bash
+  cd workspace && pnpm install
+  ```
 
-4. **Routes Check**
-   - Verify multiple pages created in `src/pages/`
-   - Verify routes registered in App.tsx
+2. **Automated verification (required)**
+  ```bash
+  cd workspace && pnpm run verify:win
+  ```
+  - This command must build, package, and smoke-test the executable.
+  - If this script does not exist, create it in Phase 4 before continuing.
 
-5. **Functionality Check**
-   - Run app: `cd workspace && pnpm start`
-   - Test CRUD on all pages
-   - Test navigation
+3. **Manual core action smoke test (required)**
+  - Launch packaged app from `workspace/release/win-unpacked/*.exe`
+  - Perform one core workflow action (domain-specific)
+  - Confirm no crash/error dialog
 
-**If validation fails:** Fix issues and re-check before proceeding to Phase 7.
+4. **Naming validation (required)**
+  - Set production app name before final packaging (for example in `package.json` `name`, `productName`, and `build.win.executableName` where applicable)
+  - Verify final executable and installer names use the real app name
+  - Do not ship artifacts containing placeholder names like `boilerplate` or `competition-app`
 
----
+5. **Delivery packaging**
+  ```bash
+  mkdir -p delivery/source
+  cp -r workspace/* delivery/source/
+  rm -rf delivery/source/node_modules delivery/source/dist delivery/source/release
 
-### Phase 7: Package Deliverables
-**Input:** Validated workspace
-**Output:** `delivery/` folder
+  mkdir -p delivery/executable
+  cp -r workspace/release/* delivery/executable/
+  ```
 
-Create deliverable structure:
+6. **Database Schema + README**
+  - Extract CREATE TABLE statements from `electron/database.js`
+  - Save as `delivery/schema.sql`
+  - Create `delivery/README.md` with install/run instructions
 
-1. **Source Code**
-   ```bash
-   mkdir -p delivery/source
-   cp -r workspace/* delivery/source/
-   rm -rf delivery/source/node_modules delivery/source/dist
-   ```
+**If ANY check fails:** debug and fix; do not mark Phase 6 complete.
 
-2. **Executable**
-   ```bash
-   cd workspace
-   pnpm run electron:build
-   cp -r dist/* ../delivery/executable/
-   ```
-
-3. **Database Schema**
-   - Extract CREATE TABLE statements from `electron/database.js`
-   - Save as `delivery/schema.sql`
-
-4. **Documentation**
-   - Create `delivery/README.md` with installation instructions
-
-**Update PROGRESS.md: All phases complete!**
+**Update PROGRESS.md with evidence, then mark all phases complete.**
 
 ---
 
@@ -825,6 +820,17 @@ import { Modal } from '../components/ui/Modal';
 
 **Always update** `workspace/.context/PROGRESS.md` after completing each phase!
 
+**Phase 6 is BLOCKING:** Do not write `Status: COMPLETE` unless all required evidence is present.
+
+Required Phase 6 evidence:
+- Verification command and exit code (`pnpm run verify:win`)
+- Executable path tested (`workspace/release/win-unpacked/*.exe`)
+- Executable and installer names verified (real app name)
+- Launch timestamp
+- Database file path and existence check
+- Basic functionality action tested + result
+- Error summary (`NONE` if no errors)
+
 Example:
 ```markdown
 ## Phase 0: Prepare Input Files
@@ -850,8 +856,9 @@ Example:
 If interrupted:
 1. Read `workspace/.context/PROGRESS.md`
 2. Check last completed phase
-3. Continue from next incomplete phase
-4. Do NOT restart from Phase 0 unless explicitly told
+3. If Phase 6 is marked complete but evidence is missing, treat Phase 6 as incomplete
+4. Continue from next incomplete phase
+5. Do NOT restart from Phase 0 unless explicitly told
 
 ---
 

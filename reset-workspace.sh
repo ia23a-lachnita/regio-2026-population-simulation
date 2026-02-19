@@ -111,15 +111,29 @@ Update this file after completing each phase!
 - Status: NOT STARTED
 
 ## Phase 5: Validate
-- [ ] Run build check (pnpm run build)
 - [ ] Validate schema and routes
-- [ ] Test functionality
+- [ ] Verify routes/pages/components exist
+- [ ] Confirm core functionality implemented
 - Status: NOT STARTED
 
 ## Phase 6: Package
-- [ ] Build executable (pnpm run electron:build)
+- [ ] Run verification (pnpm run verify:win)
+- [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe)
+- [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders)
+- [ ] Perform one manual core action (create/edit/delete or equivalent)
+- [ ] Confirm DB file exists after launch
 - [ ] Create delivery/ structure
 - [ ] Generate documentation
+- Evidence:
+  - verify_command: 
+  - verify_exit_code: 
+  - exe_tested: 
+  - artifact_naming_check: 
+  - launch_timestamp: 
+  - db_path: 
+  - db_exists: 
+  - manual_action: 
+  - error_summary: 
 - Status: NOT STARTED
 EOF
 

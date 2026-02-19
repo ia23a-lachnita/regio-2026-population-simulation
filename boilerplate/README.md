@@ -23,6 +23,9 @@ pnpm run electron:dev
 
 # Build for production
 pnpm run electron:build
+
+# Full Windows verification (build + package + smoke launch)
+pnpm run verify:win
 ```
 
 ## Project Structure
@@ -54,6 +57,12 @@ boilerplate/
 - No setup needed
 - Database file created at: `userData/app.db`
 - On Windows: `C:\Users\<user>\AppData\Roaming\electron-react-boilerplate\app.db`
+
+## Validation Gate
+
+- Use `pnpm run verify:win` before claiming completion.
+- This command runs packaging plus executable smoke launch checks.
+- Packaged output location: `release/win-unpacked/`.
 
 ## Customization
 

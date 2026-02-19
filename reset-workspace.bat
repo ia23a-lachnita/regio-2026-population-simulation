@@ -97,15 +97,29 @@ echo [3/4] Creating PROGRESS.md...
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 5: Validate
-  echo - [ ] Run build check (pnpm run build^)
   echo - [ ] Validate schema and routes
-  echo - [ ] Test functionality
+  echo - [ ] Verify routes/pages/components exist
+  echo - [ ] Confirm core functionality implemented
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 6: Package
-  echo - [ ] Build executable (pnpm run electron:build^)
+  echo - [ ] Run verification (pnpm run verify:win^)
+  echo - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe^)
+  echo - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders^)
+  echo - [ ] Perform one manual core action (create/edit/delete or equivalent^)
+  echo - [ ] Confirm DB file exists after launch
   echo - [ ] Create delivery/ structure
   echo - [ ] Generate documentation
+  echo - Evidence:
+  echo   - verify_command:
+  echo   - verify_exit_code:
+  echo   - exe_tested:
+  echo   - artifact_naming_check:
+  echo   - launch_timestamp:
+  echo   - db_path:
+  echo   - db_exists:
+  echo   - manual_action:
+  echo   - error_summary:
   echo - Status: NOT STARTED
 ) > workspace\.context\PROGRESS.md
 
