@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const db = require('./database.cjs');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -88,14 +88,31 @@ ipcMain.handle('db-query', async (event, sql, params) => {
   }
 });
 
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  try {
+    await createWindow();
+  } catch (error) {
+    console.error('[Main] Startup failed:', error);
+    dialog.showErrorBox('Startup Error', error?.stack || String(error));
+    app.exit(1);
+    return;
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      createWindow().catch((error) => {
+        console.error('[Main] Failed to create window on activate:', error);
+      });
     }
   });
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[Main] Uncaught exception:', error);
+  if (app.isReady()) {
+    dialog.showErrorBox('Uncaught Exception', error?.stack || String(error));
+  }
+  app.exit(1);
 });
 
 app.on('window-all-closed', () => {

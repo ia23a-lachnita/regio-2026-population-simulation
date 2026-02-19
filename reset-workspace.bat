@@ -46,7 +46,9 @@ if not exist boilerplate (
 )
 
 echo   Copying boilerplate to workspace...
-robocopy boilerplate workspace /E /XD node_modules dist out release .vscode > nul
+robocopy boilerplate workspace /E ^
+  /XD node_modules dist out release build coverage .turbo .cache .parcel-cache .next .nuxt .svelte-kit .vite .vscode ^
+  /XF *.tsbuildinfo > nul
 if errorlevel 8 (
   echo   ERROR: Failed to copy boilerplate
   exit /b 1

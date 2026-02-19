@@ -13,9 +13,20 @@
     "electron:dev:seed": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && cross-env SEED_DB=true electron .\"",
     "electron:build": "pnpm run build && electron-builder"
   },
+  "build": {
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "signAndEditExecutable": false
+    }
+  },
   "dependencies": {
+    "bindings": "^1.5.0",
     "better-sqlite3": "^9.4.3",
     "clsx": "^2.1.0",
+    "file-uri-to-path": "^1.0.0",
     "lucide-react": "^0.363.0",
     "mysql2": "^3.9.2",
     "react": "^18.3.1",

@@ -50,7 +50,23 @@ fi
 
 # Create workspace with boilerplate
 echo "  Copying boilerplate to workspace..."
-rsync -a --exclude='node_modules' --exclude='dist' --exclude='out' --exclude='release' boilerplate/ workspace/
+rsync -a \
+  --exclude='node_modules' \
+  --exclude='dist' \
+  --exclude='out' \
+  --exclude='release' \
+  --exclude='build' \
+  --exclude='coverage' \
+  --exclude='.turbo' \
+  --exclude='.cache' \
+  --exclude='.parcel-cache' \
+  --exclude='.next' \
+  --exclude='.nuxt' \
+  --exclude='.svelte-kit' \
+  --exclude='.vite' \
+  --exclude='.vscode' \
+  --exclude='*.tsbuildinfo' \
+  boilerplate/ workspace/
 echo "  ✓ Boilerplate copied"
 
 # Create context directory structure

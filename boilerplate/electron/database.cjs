@@ -1,10 +1,10 @@
-const mysql = require('mysql2/promise');
 const BetterSqlite3 = require('better-sqlite3');
 const path = require('path');
 const { app } = require('electron');
 
 let db = null;
-let dbType = 'mysql'; // 'mysql' or 'sqlite'
+let dbType = 'sqlite'; // 'mysql' or 'sqlite'
+let mysqlModule = null;
 
 // Log level control
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
@@ -19,9 +19,25 @@ const DB_CONFIG = {
 };
 
 async function initDatabase() {
+  const useMysql = ['1', 'true', 'mysql'].includes(String(process.env.USE_MYSQL || process.env.DB_TYPE || '').toLowerCase());
+
+  if (!useMysql) {
+    initSqliteDatabase();
+    if (process.env.SEED_DB !== 'false' && process.env.SEED_DB !== '0') {
+      await seedDatabase();
+    }
+    return;
+  }
+
   try {
+    try {
+      mysqlModule = require('mysql2/promise');
+    } catch (error) {
+      throw new Error(`mysql2 is unavailable: ${error.message}`);
+    }
+
     // First, connect to MySQL server without specifying database to create it if needed
-    const tempConnection = await mysql.createConnection({
+    const tempConnection = await mysqlModule.createConnection({
       host: DB_CONFIG.host,
       user: DB_CONFIG.user,
       password: DB_CONFIG.password
@@ -33,7 +49,7 @@ async function initDatabase() {
     await tempConnection.end();
     
     // Now connect to the actual database
-    const connection = await mysql.createConnection(DB_CONFIG);
+    const connection = await mysqlModule.createConnection(DB_CONFIG);
     
     // Set up MySQL schema
     await setupMysqlSchema(connection);
@@ -43,22 +59,29 @@ async function initDatabase() {
     if (shouldLog('info')) console.log('[Database] Connected to MySQL successfully.');
   } catch (error) {
     console.warn('[Database] MySQL connection failed, falling back to SQLite:', error.message);
-    dbType = 'sqlite';
-    const dbPath = path.join(app.getPath('userData'), 'app.db');
-    if (shouldLog('info')) console.log('[Database] Using SQLite database at:', dbPath);
-    db = new BetterSqlite3(dbPath);
-    setupSqliteSchema();
-    if (shouldLog('info')) console.log('[Database] SQLite schema initialized.');
+    mysqlModule = null;
+    initSqliteDatabase();
   }
 
   // Optionally seed database if SEED_DB environment variable is set
-  if (process.env.SEED_DB === 'true' || process.env.SEED_DB === '1') {
+  if (process.env.SEED_DB !== 'false' && process.env.SEED_DB !== '0') {
     await seedDatabase();
   }
 }
 
+function initSqliteDatabase() {
+  dbType = 'sqlite';
+  const dbPath = path.join(app.getPath('userData'), 'app.db');
+  if (shouldLog('info')) console.log('[Database] Using SQLite database at:', dbPath);
+  db = new BetterSqlite3(dbPath);
+  setupSqliteSchema();
+  if (shouldLog('info')) console.log('[Database] SQLite schema initialized.');
+}
+
 function setupSqliteSchema() {
   if (dbType !== 'sqlite') return;
+
+  db.exec('PRAGMA foreign_keys = ON;');
 
   // Example schema - DELETE THIS and replace with your application's tables
   db.exec(`
@@ -86,17 +109,15 @@ async function setupMysqlSchema(connection) {
 
 async function seedDatabase() {
   if (shouldLog('info')) console.log('[Database] Seeding database with sample data...');
+
+  const countRows = await query('SELECT COUNT(*) AS count FROM items', []);
+  const existingCount = Number(countRows?.[0]?.count ?? 0);
+  if (existingCount > 0) {
+    if (shouldLog('info')) console.log('[Database] Seed skipped (database already has data).');
+    return;
+  }
   
   try {
-    // Clear existing data
-    if (dbType === 'mysql') {
-      const connection = await mysql.createConnection(DB_CONFIG);
-      await connection.execute('DELETE FROM items');
-      await connection.end();
-    } else {
-      db.exec('DELETE FROM items');
-    }
-
     // Insert seed data
     const seedItems = [
       { name: 'Sample Item 1', description: 'This is a sample item for testing' },
@@ -118,12 +139,13 @@ async function seedDatabase() {
 }
 
 async function query(sql, params = []) {
-  if (dbType === 'mysql') {
-    const connection = await mysql.createConnection(DB_CONFIG);
+  if (dbType === 'mysql' && mysqlModule) {
+    const connection = await mysqlModule.createConnection(DB_CONFIG);
     const [results] = await connection.execute(sql, params);
     await connection.end();
     return results;
   } else {
+    db.exec('PRAGMA foreign_keys = ON;');
     // SQLite uses ? for placeholders, MySQL also uses ?
     // But SQLite better-sqlite3 uses .prepare().all() or .run()
     const stmt = db.prepare(sql);

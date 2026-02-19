@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route, NavLink } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -22,6 +22,8 @@ const NavItem = ({ to, icon: Icon, children }: { to: string, icon: any, children
 );
 
 function App() {
+  const Router = window.location.protocol === 'file:' ? HashRouter : BrowserRouter;
+
   return (
     <Router>
       <div className="flex h-screen bg-slate-950 text-slate-100 overflow-hidden">
