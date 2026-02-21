@@ -149,16 +149,3 @@ echo.
 echo =========================================
 echo WORKSPACE RESET COMPLETE
 echo =========================================
-echo.
-echo Next Steps:
-echo.
-echo 1. Start your AI agent (Claude Code, Gemini CLI, etc.^)
-echo.
-echo 2. Type: START
-echo.
-echo The AI will read CLAUDE.md (or GEMINI.md^) and autonomously
-echo complete all 7 phases (Phase 0-6^).
-echo.
-echo Working directory: %CD%
-echo.
-pause
