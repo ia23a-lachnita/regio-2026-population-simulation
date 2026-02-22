@@ -12,9 +12,13 @@
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:dev:seed": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && cross-env SEED_DB=true electron .\"",
     "electron:build": "pnpm run build && electron-builder",
+    "db:clean": "powershell -ExecutionPolicy Bypass -File scripts/db-clean.ps1",
+    "db:reset": "powershell -ExecutionPolicy Bypass -File scripts/db-reset.ps1",
     "verify:input:prep:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-input-prep.ps1",
     "smoke:exe:win": "powershell -ExecutionPolicy Bypass -File scripts/smoke-exe.ps1",
-    "verify:win": "pnpm run verify:input:prep:win && pnpm run electron:build && pnpm run smoke:exe:win"
+    "functional:acceptance:win": "powershell -ExecutionPolicy Bypass -File scripts/functional-acceptance.ps1",
+    "verify:completion:contract:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-completion-contract.ps1",
+    "verify:win": "pnpm run db:clean && pnpm run db:reset && pnpm run verify:input:prep:win && pnpm run electron:build && pnpm run smoke:exe:win && pnpm run functional:acceptance:win && pnpm run verify:completion:contract:win"
   },
   "build": {
     "npmRebuild": false,

@@ -540,9 +540,10 @@ CRITICAL: **Build success does NOT mean completion.**
 YOU ARE NOT DONE UNTIL ALL are true:
 1. `pnpm run verify:win` succeeds (exit code 0)
 2. Packaged executable launches without startup error
-3. Automated acceptance tests pass for critical workflows defined by the current competition requirements
+3. Functional acceptance gate passes for critical workflows defined by the current competition requirements
 4. Database file exists after launch
 5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
+6. Acceptance artifacts are not placeholders/synthetic-only and contain no skipped required scenarios
 
 Run these checks in order:
 
@@ -555,22 +556,16 @@ Run these checks in order:
   ```bash
   cd workspace && pnpm run verify:win
   ```
-  - This command must validate input preparation evidence, build/package, and smoke-test the executable.
+  - This command must validate data hygiene (`db:clean` + `db:reset`), input preparation evidence, build/package, executable smoke-test, and functional acceptance artifact gate.
   - If this script does not exist, create it in Phase 4 before continuing.
 
-3. **Automated UI acceptance gate (required)**
-  - Add and run acceptance tests that validate all critical workflows for the current domain.
-  - Scenarios must be derived from `workspace/.context/REQUIREMENTS.md` and not hard-coded to a specific app.
-  - Persist test evidence to `workspace/.context/UI_ACCEPTANCE.md`
-  - Do not substitute this gate with manual checks unless automation is technically impossible.
-  - **Implementation location (instruction-first):**
-    - Treat this instruction file as the source of truth for acceptance automation behavior.
-    - Do not rely on `README.md` as the only place for acceptance/test-contract requirements.
-  - **Template-safe acceptance pattern (generic):**
-    - Use a reusable script (for example `scripts/ui-acceptance.mjs`) that is domain-agnostic.
-    - Parameterize domain specifics via config/artifact inputs (selectors, entity names, required workflows), not hard-coded app names.
-    - Enforce reliability defaults: isolated user data dir, explicit dev server URL/port, deterministic evidence output.
-    - Write acceptance evidence to `workspace/.context/UI_ACCEPTANCE.md` and fail the gate if any required scenario fails.
+3. **Functional acceptance artifact gate (required)**
+  - Produce `workspace/.context/FUNCTIONAL_ACCEPTANCE.md` before declaring completion.
+  - Scenarios must be derived from `workspace/.context/REQUIREMENTS.md` and must remain app-agnostic in contract shape.
+  - For each required scenario, include an explicit line: `scenario: <scenario-id>`.
+  - Do not mark required scenarios as skipped.
+  - Do not use placeholder/synthetic-only acceptance output.
+  - If scenario ids are customized, store them in `workspace/.context/CRITICAL_SCENARIOS.json` (`required_scenarios` array).
 
 4. **Naming validation (required)**
   - Set production app name before final packaging (for example in `package.json` `name`, `productName`, and `build.win.executableName` where applicable)
@@ -599,11 +594,35 @@ Run these checks in order:
 - Switch strategy (different tool/command/path), log the change in PROGRESS.md, and retry.
 - If failures continue after 2 strategy switches, mark the phase as BLOCKED with explicit root cause and stop claiming completion.
 
+**No-placeholder policy (required):**
+- Never ship `FUNCTIONAL_ACCEPTANCE.md` or phase evidence containing `TODO`, `placeholder`, `synthetic-only`, or `hardcoded pass` markers.
+- If evidence is incomplete, report BLOCKED instead of claiming completion.
+- If `workspace/.context/FINAL_SUMMARY.md` is produced, include a `Known Limitations` section.
+
 **Update PROGRESS.md with evidence, then mark all phases complete.**
 
 ---
 
 ## Technical Context (Boilerplate Patterns)
+
+## Windows Command Guardrails (required)
+
+- Use PowerShell-safe commands and quoting on Windows (for example `Set-Location`, `Join-Path`, quoted absolute paths).
+- Do not treat command flags (for example `robocopy /NFL`) as filesystem paths.
+- Prefer explicit PowerShell command forms over shell-ambiguous snippets.
+- When a command fails due to shell mismatch, switch to a PowerShell-native equivalent and log the strategy change in `PROGRESS.md`.
+
+## Agent Skills Discovery (required)
+
+- Store reusable skills in agent-native project locations so tools auto-discover them:
+  - Claude: `.claude/skills/<skill-name>/SKILL.md`
+  - Gemini: `.gemini/skills/<skill-name>/SKILL.md` (or `.agents/skills/<skill-name>/SKILL.md`)
+  - Copilot: `.github/skills/<skill-name>/SKILL.md`
+- Keep skills app-agnostic and competition-general (no Prioritize-only behavior).
+- Recommended shared skill topics:
+  - SQLite migration + deterministic seed/reset workflow
+  - Electron packaging + verify gate pitfalls
+  - Functional acceptance evidence authoring checklist
 
 ### Architecture
 - **Frontend:** React 18 + TypeScript + Tailwind CSS
@@ -838,13 +857,15 @@ Required Phase 6 evidence:
 - Input preparation summary path (`workspace/.context/INPUT_PREP_SUMMARY.json`)
 - Input preparation status (`PASS` or `WARN`) and `pdf_converted_failed = 0`
 - Verification command and exit code (`pnpm run verify:win`)
+- Data hygiene evidence (`workspace/.context/DB_CLEAN.md` and `workspace/.context/DB_RESET.md`)
 - Executable path tested (`workspace/release/win-unpacked/*.exe`)
 - Executable and installer names verified (real app name)
 - Launch timestamp
 - Database file path and existence check
-- Automated UI acceptance command + exit code
-- Automated UI acceptance report path (`workspace/.context/UI_ACCEPTANCE.md`)
-- Automated UI acceptance scenarios passed (domain-critical lifecycle flows)
+- Functional acceptance command + exit code (`pnpm run functional:acceptance:win`)
+- Functional acceptance report path (`workspace/.context/FUNCTIONAL_ACCEPTANCE.md`)
+- Functional acceptance scenarios passed (domain-critical lifecycle flows)
+- Functional acceptance gate evidence (`workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md`)
 - Error summary (`NONE` if no errors)
 
 Example:

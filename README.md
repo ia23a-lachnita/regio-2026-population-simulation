@@ -163,6 +163,8 @@ python utils/extract-pdf-images.py input/requirements.pdf workspace/.context/sou
 ```bash
 cd workspace
 pnpm install
+pnpm run db:clean
+pnpm run db:reset
 pnpm run verify:win
 ```
 
@@ -171,6 +173,9 @@ pnpm run verify:win
 # Inspect preparation + smoke evidence
 cat workspace/.context/INPUT_PREP_SUMMARY.json
 cat workspace/.context/VERIFY_WIN.md
+cat workspace/.context/FUNCTIONAL_ACCEPTANCE.md
+cat workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md
+cat workspace/.context/COMPLETION_CONTRACT.md
 ```
 
 **AI gets interrupted:**
@@ -198,6 +203,7 @@ See `CLAUDE.md` or `GEMINI.md` for complete AI workflow.
 ## Notes
 
 - Completion quality is determined by gate evidence, not by summary language.
+- `verify:win` includes data hygiene (`db:clean`, `db:reset`) and functional acceptance evidence gate checks.
 
 ---
 

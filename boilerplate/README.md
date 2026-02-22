@@ -24,6 +24,10 @@ pnpm run electron:dev
 # Build for production
 pnpm run electron:build
 
+# Reset database state (clean + deterministic init/seed)
+pnpm run db:clean
+pnpm run db:reset
+
 # Full Windows verification (build + package + smoke launch)
 pnpm run verify:win
 ```
@@ -61,8 +65,23 @@ boilerplate/
 ## Validation Gate
 
 - Use `pnpm run verify:win` before claiming completion.
-- This command runs packaging plus executable smoke launch checks.
+- This command runs:
+  - deterministic data hygiene (`db:clean`, `db:reset`),
+  - input-preparation gate,
+  - build/package,
+  - executable smoke launch,
+  - functional acceptance artifact gate,
+  - completion-contract quality checks.
 - Packaged output location: `release/win-unpacked/`.
+
+### Functional Acceptance Artifact Contract
+
+- Create `workspace/.context/FUNCTIONAL_ACCEPTANCE.md` before final completion.
+- Include required scenario ids as lines in this format:
+  - `scenario: <scenario-id>`
+- Derive scenarios from current requirements (not hard-coded app-specific defaults).
+- Do not include placeholder/synthetic-only markers and do not skip required scenarios.
+- If `workspace/.context/FINAL_SUMMARY.md` is present, include a `Known Limitations` section.
 
 ## Customization
 

@@ -23,6 +23,12 @@ async function createWindow() {
   if (shouldLog('info')) console.log('[Main] Initializing database...');
   await db.initDatabase();
 
+  if (['1', 'true', 'yes'].includes(String(process.env.DB_INIT_ONLY || '').toLowerCase())) {
+    if (shouldLog('info')) console.log('[Main] DB_INIT_ONLY enabled. Database initialized, exiting.');
+    app.exit(0);
+    return;
+  }
+
   if (shouldLog('info')) console.log('[Main] Creating window...');
   const win = new BrowserWindow({
     width: 1200,
