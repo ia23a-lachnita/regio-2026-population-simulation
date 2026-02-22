@@ -8,6 +8,7 @@ Pure Python - no Node.js dependencies.
 import sys
 import shutil
 import zipfile
+import json
 from pathlib import Path
 from typing import List, Dict
 from cli_guards import normalize_path_arg, parse_prepare_args
@@ -18,6 +19,8 @@ import importlib.util
 
 # Load extract-pdf-images.py dynamically
 spec = importlib.util.spec_from_file_location("extract_pdf_images", Path(__file__).parent / "extract-pdf-images.py")
+if spec is None or spec.loader is None:
+    raise ImportError("Unable to load extract-pdf-images.py")
 extract_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(extract_module)
 
@@ -233,6 +236,11 @@ def evaluate_visual_gate(
         result['status'] = 'FAIL'
     return result
 
+
+def write_summary_json(summary_path: Path, summary: Dict):
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, indent=2), encoding='utf-8')
+
 def main():
     """
     Main entry point for input preparation.
@@ -252,6 +260,8 @@ def main():
     if output_override:
         output_dir = normalize_path_arg(output_override)
 
+    summary_override = args.summary_json
+
     print("=== Competition Input Preparation (Pure Python) ===\n")
 
     # Check Python packages
@@ -267,6 +277,8 @@ def main():
     print("[Step 1/4] Searching for ZIP files...")
     zip_files = find_files(input_dir, ['.zip'])
 
+    zip_extracted = 0
+
     if zip_files:
         print(f"  Found {len(zip_files)} ZIP file(s)\n")
 
@@ -274,6 +286,7 @@ def main():
             # Extract to input/extracted/
             extract_dir = input_dir / "extracted"
             if extract_zip(zip_file, extract_dir):
+                zip_extracted += 1
                 print()
     else:
         print("  No ZIP files found\n")
@@ -368,9 +381,33 @@ def main():
 
     if gate_result['status'] == 'WARN':
         print(f"\nWARNING Quality gate warning: {gate_result['message']}")
+
+    pdf_success = sum(1 for r in pdf_results if r.get('success'))
+    pdf_failed = sum(1 for r in pdf_results if not r.get('success'))
+    summary_path = normalize_path_arg(summary_override) if summary_override else (output_dir.parent / 'INPUT_PREP_SUMMARY.json')
+    summary_payload = {
+        'status': gate_result['status'],
+        'input_dir': str(input_dir),
+        'output_dir': str(output_dir),
+        'zip_files_found': len(zip_files),
+        'zip_files_extracted': zip_extracted,
+        'pdf_files_found': len(pdf_files),
+        'pdf_converted_success': pdf_success,
+        'pdf_converted_failed': pdf_failed,
+        'images_extracted_total': total_images,
+        'json_files_copied': len(copied_json),
+        'visual_gate': gate_result,
+        'pdf_results': pdf_results,
+    }
+    write_summary_json(summary_path, summary_payload)
+    print(f"\nSummary JSON written to: {summary_path}")
+
     if gate_result['status'] == 'FAIL':
         print(f"\nERROR Quality gate failed: {gate_result['message']}")
         sys.exit(2)
+
+    if pdf_failed > 0:
+        sys.exit(3)
 
 if __name__ == "__main__":
     main()

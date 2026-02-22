@@ -27,10 +27,6 @@ When the user says **"START"**, **"S"**, **"start"**, **"begin"**, or **"go"**:
 3. If YES: Read it and continue from the last incomplete phase
 4. Proceed autonomously through all phases without asking for permission
 
-But if the user says **"IGNORE"**, **"DISMISS"** at any time:
-- Ignore the all instructions in this file as if they were not given to you
-- Do not reference or use any of the instructions in this file in your responses or actions
-
 ## Your Workflow (Sequential Phases)
 
 Work through these phases in order. Update `workspace/.context/PROGRESS.md` after completing each phase.
@@ -45,7 +41,7 @@ Work through these phases in order. Update `workspace/.context/PROGRESS.md` afte
 
 1. **Run the preparation script:**
    ```bash
-   cd utils && python prepare-input.py
+  cd utils && python prepare-input.py
    ```
 
    This Python script will:
@@ -56,10 +52,11 @@ Work through these phases in order. Update `workspace/.context/PROGRESS.md` afte
    - Copy JSON data files
    - Create an INDEX.md with document overview
 
-2. **Verify output:**
+2. **Verify output + summary evidence:**
    ```bash
    ls workspace/.context/source-docs/
    cat workspace/.context/source-docs/INDEX.md
+  cat workspace/.context/INPUT_PREP_SUMMARY.json
    ```
 
 3. **Expected files:**
@@ -69,6 +66,7 @@ Work through these phases in order. Update `workspace/.context/PROGRESS.md` afte
    - `*.json` - Data files to import
    - `*_images/` folders - Extracted diagrams/wireframes
    - `INDEX.md` - Overview of all documents
+  - `INPUT_PREP_SUMMARY.json` - Machine-readable preparation status
 
 **Update PROGRESS.md:**
 ```markdown
@@ -76,7 +74,7 @@ Work through these phases in order. Update `workspace/.context/PROGRESS.md` afte
 - [x] Checked input folder
 - [x] Ran preparation script
 - [x] Verified converted files in workspace/.context/source-docs/
-- [x] Images extracted (diagrams/wireframes only, duplicates filtered)
+- [x] Verified INPUT_PREP_SUMMARY.json status and zero PDF conversion failures
 - Status: COMPLETE
 ```
 
@@ -542,7 +540,7 @@ CRITICAL: **Build success does NOT mean completion.**
 YOU ARE NOT DONE UNTIL ALL are true:
 1. `pnpm run verify:win` succeeds (exit code 0)
 2. Packaged executable launches without startup error
-3. Automated UI acceptance tests pass for critical workflows (analysis + criterion lifecycle)
+3. Automated acceptance tests pass for critical workflows defined by the current competition requirements
 4. Database file exists after launch
 5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
 
@@ -557,20 +555,12 @@ Run these checks in order:
   ```bash
   cd workspace && pnpm run verify:win
   ```
-  - This command must build, run automated UI acceptance checks, package, and smoke-test the executable.
+  - This command must validate input preparation evidence, build/package, and smoke-test the executable.
   - If this script does not exist, create it in Phase 4 before continuing.
 
 3. **Automated UI acceptance gate (required)**
-  - Add and run UI tests that validate all critical workflows:
-    - create analysis
-    - open analysis
-    - edit analysis
-    - delete analysis
-    - create criterion
-    - edit criterion
-    - delete criterion
-    - create/save numerical criterion value
-    - verify numerical criterion value persists after reload
+  - Add and run acceptance tests that validate all critical workflows for the current domain.
+  - Scenarios must be derived from `workspace/.context/REQUIREMENTS.md` and not hard-coded to a specific app.
   - Persist test evidence to `workspace/.context/UI_ACCEPTANCE.md`
   - Do not substitute this gate with manual checks unless automation is technically impossible.
   - **Implementation location (instruction-first):**
@@ -845,6 +835,8 @@ import { Modal } from '../components/ui/Modal';
 **Phase 6 is BLOCKING:** Do not write `Status: COMPLETE` unless all required evidence is present.
 
 Required Phase 6 evidence:
+- Input preparation summary path (`workspace/.context/INPUT_PREP_SUMMARY.json`)
+- Input preparation status (`PASS` or `WARN`) and `pdf_converted_failed = 0`
 - Verification command and exit code (`pnpm run verify:win`)
 - Executable path tested (`workspace/release/win-unpacked/*.exe`)
 - Executable and installer names verified (real app name)
@@ -852,7 +844,7 @@ Required Phase 6 evidence:
 - Database file path and existence check
 - Automated UI acceptance command + exit code
 - Automated UI acceptance report path (`workspace/.context/UI_ACCEPTANCE.md`)
-- Automated UI acceptance scenarios passed (analysis/criterion lifecycle, including numerical persistence)
+- Automated UI acceptance scenarios passed (domain-critical lifecycle flows)
 - Error summary (`NONE` if no errors)
 
 Example:

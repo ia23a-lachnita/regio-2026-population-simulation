@@ -24,6 +24,14 @@ class CliGuardsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_prepare_args(['--input-dir', 'input', '/NFL'])
 
+    def test_prepare_parser_accepts_summary_json(self):
+        args = parse_prepare_args([
+            '--input-dir', 'input',
+            '--output-dir', 'workspace/.context/source-docs',
+            '--summary-json', 'workspace/.context/INPUT_PREP_SUMMARY.json',
+        ])
+        self.assertTrue(args.summary_json.endswith('INPUT_PREP_SUMMARY.json'))
+
     def test_extract_parser_accepts_flag_paths(self):
         args = parse_extract_args([
             '--pdf', r'C:\Users\xursc\docs\wireframe.pdf',

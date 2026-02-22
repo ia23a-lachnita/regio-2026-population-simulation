@@ -36,12 +36,16 @@ def parse_prepare_args(argv: List[str]) -> argparse.Namespace:
         default='fail',
         help='Behavior when expected visuals are not extracted',
     )
+    parser.add_argument(
+        '--summary-json',
+        help='Optional path for machine-readable preparation summary JSON',
+    )
 
     args, unknown = parser.parse_known_args(argv)
     if unknown:
         parser.error(f"Unknown arguments: {' '.join(unknown)}")
 
-    for candidate in [args.input_dir, args.output_dir, args.input_dir_pos, args.output_dir_pos]:
+    for candidate in [args.input_dir, args.output_dir, args.input_dir_pos, args.output_dir_pos, args.summary_json]:
         if candidate:
             normalize_path_arg(candidate)
 
@@ -71,3 +75,5 @@ def parse_extract_args(argv: List[str]):
         'pdf_path': normalize_path_arg(pdf_value),
         'output_dir': normalize_path_arg(output_value),
     }
+
+

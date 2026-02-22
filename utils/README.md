@@ -9,7 +9,7 @@ This system intelligently extracts **only meaningful visual content** from PDFs:
 - ❌ Logos, headers, footers, decorative elements
 - ❌ Whole page renders
 
-**Result:** 100% relevant visual content, zero noise.
+**Result:** high-signal visual extraction with machine-readable reliability evidence.
 
 **Technology:** Pure Python (no Node.js dependencies)
 
@@ -50,6 +50,7 @@ python prepare-input.py [input-dir] [output-dir]
 4. Converts PDFs to Markdown + extracts meaningful images
 5. Copies JSON data files
 6. Creates INDEX.md overview
+7. Writes `INPUT_PREP_SUMMARY.json` for workflow gates
 
 **Example:**
 ```bash
@@ -69,6 +70,9 @@ workspace/.context/source-docs/
 ├── wireframes_images/                # → image_1.png ... image_7.png
 ├── Skill09_general-description.md    # General info (text-only)
 └── exercises.json                    # Data to import
+
+workspace/.context/
+└── INPUT_PREP_SUMMARY.json           # Preparation gate evidence
 ```
 
 ---
@@ -208,12 +212,15 @@ The AI agent runs `prepare-input.py` as **Phase 0**:
 2. Verify output:
    ls workspace/.context/source-docs/
    cat workspace/.context/source-docs/INDEX.md
+   cat workspace/.context/INPUT_PREP_SUMMARY.json
 
 3. Check extracted images:
    find workspace/.context/source-docs -name "*.png"
 
 Expected: 8 meaningful images (wireframes + diagrams)
 ```
+
+For workflow maintenance, lifecycle-level benchmark tooling lives outside this workflow repository copy.
 
 ### For Manual Use
 

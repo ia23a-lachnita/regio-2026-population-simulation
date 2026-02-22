@@ -90,7 +90,8 @@ Update this file after completing each phase!
 ## Phase 0: Prepare Input Files
 - [ ] Run: cd utils && python prepare-input.py
 - [ ] Verify: workspace/.context/source-docs/ created
-- [ ] Check: Images extracted (wireframes, diagrams)
+- [ ] Check: INPUT_PREP_SUMMARY.json created with status PASS/WARN
+- [ ] Check: PDF conversion failures = 0
 - Status: NOT STARTED
 
 ## Phase 1: Extract Requirements
@@ -125,11 +126,14 @@ Update this file after completing each phase!
 - [ ] Run verification (pnpm run verify:win)
 - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe)
 - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders)
-- [ ] Run automated UI acceptance tests for analysis + criterion lifecycle
+- [ ] Run automated acceptance tests for critical workflows (domain-configured)
 - [ ] Confirm DB file exists after launch
 - [ ] Create delivery/ structure
 - [ ] Generate documentation
 - Evidence:
+  - input_prep_summary: 
+  - input_prep_status: 
+  - input_pdf_failures: 
   - verify_command: 
   - verify_exit_code: 
   - exe_tested: 
@@ -137,10 +141,10 @@ Update this file after completing each phase!
   - launch_timestamp: 
   - db_path: 
   - db_exists: 
-  - ui_acceptance_command: 
-  - ui_acceptance_exit_code: 
-  - ui_acceptance_report: 
-  - ui_acceptance_scenarios: 
+  - acceptance_command: 
+  - acceptance_exit_code: 
+  - acceptance_report: 
+  - acceptance_scenarios: 
   - error_summary: 
 - Status: NOT STARTED
 EOF
