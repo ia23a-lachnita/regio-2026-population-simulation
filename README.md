@@ -1,6 +1,18 @@
 # AI-Driven Competition Workflow
 
-Autonomous workflow scaffold for programming competitions with evidence-based completion gates.
+Implementation template repository for competition app delivery using autonomous agents and evidence-based completion gates.
+
+## Where This Fits
+
+This repository is the **implementation stage** template in the 3-stage lifecycle:
+
+1. Implement (this repo)
+2. Evaluate (evaluation template repo)
+3. Optimize (lifecycle/orchestrator repo)
+
+Related docs:
+- Lifecycle/orchestrator README: [../README.md](../README.md)
+- Evaluation template README: [../competition-workflow-eval-optimization/README.md](../competition-workflow-eval-optimization/README.md)
 
 ## Quick Start
 
@@ -18,9 +30,19 @@ Autonomous workflow scaffold for programming competitions with evidence-based co
 **Claude Code users:** Read `CLAUDE.md` or just type `START`
 **Gemini CLI users:** Read `GEMINI.md` or just type `START`
 
-Both files contain identical instructions for autonomous competition completion.
+Both files contain aligned instructions for autonomous competition completion.
 
 ---
+
+## What This Project Does
+
+Given competition inputs (ZIP/PDF/TXT), this template guides an agent to:
+
+- prepare and normalize inputs,
+- extract requirements and model the domain,
+- implement a complete Electron + React + SQLite application,
+- validate with build/smoke/functional/completion gates,
+- package submission-ready deliverables.
 
 ## How It Works
 
@@ -92,6 +114,16 @@ competition/
 ├── GEMINI.md                 # Same as CLAUDE.md
 └── reset-workspace.sh/bat    # Reset script
 ```
+
+## Integration With Lifecycle Iterations
+
+Inside lifecycle runs, this template is cloned under:
+
+- `iterations/iterationN/workflows/workflow-claude-code`
+- `iterations/iterationN/workflows/workflow-copilot-cli`
+- `iterations/iterationN/workflows/workflow-gemini-cli`
+
+Evaluation for the same iteration is performed in `iterations/iterationN/post-competition-workflow-eval`.
 
 ---
 
