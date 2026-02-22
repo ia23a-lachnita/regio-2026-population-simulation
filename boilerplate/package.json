@@ -12,8 +12,9 @@
     "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:dev:seed": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && cross-env SEED_DB=true electron .\"",
     "electron:build": "pnpm run build && electron-builder",
+    "verify:input:prep:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-input-prep.ps1",
     "smoke:exe:win": "powershell -ExecutionPolicy Bypass -File scripts/smoke-exe.ps1",
-    "verify:win": "pnpm run electron:build && pnpm run smoke:exe:win"
+    "verify:win": "pnpm run verify:input:prep:win && pnpm run electron:build && pnpm run smoke:exe:win"
   },
   "build": {
     "npmRebuild": false,

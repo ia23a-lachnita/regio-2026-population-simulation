@@ -3,6 +3,10 @@ const path = require('path');
 const db = require('./database.cjs');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+if (process.env.APP_USER_DATA_DIR) {
+  app.setPath('userData', process.env.APP_USER_DATA_DIR);
+}
+
 // Suppress Electron security warnings in development
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 

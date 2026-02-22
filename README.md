@@ -1,6 +1,6 @@
 # AI-Driven Competition Workflow
 
-Autonomous system for completing programming competitions with **~5 minutes of human time**.
+Autonomous workflow scaffold for programming competitions with evidence-based completion gates.
 
 ## Quick Start
 
@@ -10,8 +10,6 @@ Autonomous system for completing programming competitions with **~5 minutes of h
 4. **Type:** `START` or `S`
 5. **Wait:** AI completes all phases (~60-120 min)
 6. **Submit:** Upload `/delivery` folder
-
-**That's it!** Human time: ~5 minutes total.
 
 ---
 
@@ -47,17 +45,16 @@ Both files contain identical instructions for autonomous competition completion.
 - Implements routing and features
 
 ### Phase 5: Validation
-- Runs build checks
-- Validates schema and routes
-- Tests functionality
+- Validates input preparation evidence
+- Runs build/package checks
+- Runs smoke checks and acceptance checks
 
 ### Phase 6: Packaging
 - Builds executable
 - Creates deliverables folder
 - Generates documentation
 
-**Total AI time:** 60-120 minutes
-**Total human time:** ~5 minutes
+**Typical AI time:** 60-120 minutes
 
 ---
 
@@ -115,6 +112,7 @@ competition/
 ✅ **Domain-agnostic** - Works for any competition theme
 ✅ **Progress tracking** - PROGRESS.md shows current phase
 ✅ **Simple start** - Just type "START"
+✅ **Input reliability benchmark** - Run corpus checks across historical ZIPs
 
 ---
 
@@ -170,7 +168,8 @@ pnpm run verify:win
 
 **verify:win fails:**
 ```bash
-# Inspect smoke evidence and executable launch checks
+# Inspect preparation + smoke evidence
+cat workspace/.context/INPUT_PREP_SUMMARY.json
 cat workspace/.context/VERIFY_WIN.md
 ```
 
@@ -196,16 +195,9 @@ See `CLAUDE.md` or `GEMINI.md` for complete AI workflow.
 
 ---
 
-## Credits
+## Notes
 
-Built to reduce 3-hour competitions to 5 minutes of human work.
-
-**Time savings:**
-- Before: 2-3 hours of manual coding
-- After: ~5 minutes (drop file + type START + submit)
-- AI handles: Requirements extraction, planning, implementation, testing, packaging
-
-**Success rate:** AI completes 90%+ autonomously with current boilerplate.
+- Completion quality is determined by gate evidence, not by summary language.
 
 ---
 

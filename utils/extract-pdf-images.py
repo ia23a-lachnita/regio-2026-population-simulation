@@ -15,8 +15,8 @@ Strategy:
 
 import sys
 import os
-import json
 import hashlib
+import shutil
 from pathlib import Path
 from collections import defaultdict
 import fitz  # PyMuPDF
@@ -70,7 +70,7 @@ def analyze_image_content(image_bytes):
         white_threshold = 240
 
         if img.mode == 'RGBA':
-            white_pixels = sum(1 for r, g, b, a in pixels if r > white_threshold and g > white_threshold and b > white_threshold)
+            white_pixels = sum(1 for r, g, b, *_ in pixels if r > white_threshold and g > white_threshold and b > white_threshold)
         else:
             white_pixels = sum(1 for r, g, b in pixels if r > white_threshold and g > white_threshold and b > white_threshold)
 
@@ -151,12 +151,13 @@ def analyze_pdf_images(pdf_path):
                 relative_y = y_position / page_height if page_height > 0 else 0
 
                 # Store info
-                if image_map[img_hash]['bytes'] is None:
-                    image_map[img_hash]['bytes'] = image_bytes
-                    image_map[img_hash]['ext'] = image_ext
+                entry = image_map[img_hash]
+                if entry['bytes'] is None:
+                    entry['bytes'] = image_bytes
+                    entry['ext'] = image_ext
 
-                image_map[img_hash]['pages'].append(page_number)
-                image_map[img_hash]['positions'].append({
+                entry['pages'].append(page_number)
+                entry['positions'].append({
                     'page': page_number,
                     'bbox': bbox,
                     'relative_y': relative_y,
@@ -164,7 +165,7 @@ def analyze_pdf_images(pdf_path):
                     'display_height': img_height
                 })
 
-            except:
+            except Exception:
                 continue
 
     doc.close()
@@ -353,7 +354,7 @@ def detect_vector_visual_pages(pdf_path):
     doc.close()
     return selected_pages
 
-def render_vector_visual_pages(pdf_path, output_dir, pdf_images_dir, existing_pages):
+def render_vector_visual_pages(pdf_path, pdf_images_dir, existing_pages):
     """
     Render selected vector-heavy pages as PNG images.
     """
@@ -365,6 +366,7 @@ def render_vector_visual_pages(pdf_path, output_dir, pdf_images_dir, existing_pa
 
     doc = fitz.open(pdf_path)
     rendered_images = []
+    pdf_images_dir.mkdir(parents=True, exist_ok=True)
 
     for page_num in pages_to_render:
         page = doc[page_num - 1]
@@ -393,9 +395,8 @@ def analyze_and_extract_pdf(pdf_path, output_dir):
     pdf_path = Path(pdf_path)
     output_dir = Path(output_dir)
 
-    # Create output directory for this PDF's images
+    # Image output directory (created lazily only when an image is written)
     pdf_images_dir = output_dir / f"{pdf_path.stem}_images"
-    pdf_images_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n  Analyzing: {pdf_path.name}")
     print(f"  Pass 1: Scanning all images...")
@@ -421,6 +422,7 @@ def analyze_and_extract_pdf(pdf_path, output_dir):
     }
 
     for idx, img_data in enumerate(meaningful_images, start=1):
+        pdf_images_dir.mkdir(parents=True, exist_ok=True)
         image_filename = f"image_{idx}.{img_data['ext']}"
         image_path = pdf_images_dir / image_filename
 
@@ -455,10 +457,13 @@ def analyze_and_extract_pdf(pdf_path, output_dir):
         for page_number in image_info.get('appears_on_pages', []):
             existing_pages.add(page_number)
 
-    vector_images = render_vector_visual_pages(pdf_path, output_dir, pdf_images_dir, existing_pages)
+    vector_images = render_vector_visual_pages(pdf_path, pdf_images_dir, existing_pages)
     if vector_images:
         print(f"  Fallback: rendered {len(vector_images)} vector visual page(s)")
         results['images'].extend(vector_images)
+
+    if not results['images'] and pdf_images_dir.exists():
+        shutil.rmtree(pdf_images_dir, ignore_errors=True)
 
     # Extract text
     results['text_pages'] = extract_text_from_pdf(pdf_path)

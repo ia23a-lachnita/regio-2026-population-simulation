@@ -74,7 +74,8 @@ echo [3/4] Creating PROGRESS.md...
   echo ## Phase 0: Prepare Input Files
   echo - [ ] Run: cd utils ^&^& python prepare-input.py
   echo - [ ] Verify: workspace/.context/source-docs/ created
-  echo - [ ] Check: Images extracted (wireframes, diagrams^)
+  echo - [ ] Check: INPUT_PREP_SUMMARY.json created with status PASS/WARN
+  echo - [ ] Check: PDF conversion failures = 0
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 1: Extract Requirements
@@ -109,11 +110,14 @@ echo [3/4] Creating PROGRESS.md...
   echo - [ ] Run verification (pnpm run verify:win^)
   echo - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe^)
   echo - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders^)
-  echo - [ ] Run automated UI acceptance tests for analysis + criterion lifecycle
+  echo - [ ] Run automated acceptance tests for critical workflows (domain-configured^)
   echo - [ ] Confirm DB file exists after launch
   echo - [ ] Create delivery/ structure
   echo - [ ] Generate documentation
   echo - Evidence:
+  echo   - input_prep_summary:
+  echo   - input_prep_status:
+  echo   - input_pdf_failures:
   echo   - verify_command:
   echo   - verify_exit_code:
   echo   - exe_tested:
@@ -121,10 +125,10 @@ echo [3/4] Creating PROGRESS.md...
   echo   - launch_timestamp:
   echo   - db_path:
   echo   - db_exists:
-  echo   - ui_acceptance_command:
-  echo   - ui_acceptance_exit_code:
-  echo   - ui_acceptance_report:
-  echo   - ui_acceptance_scenarios:
+  echo   - acceptance_command:
+  echo   - acceptance_exit_code:
+  echo   - acceptance_report:
+  echo   - acceptance_scenarios:
   echo   - error_summary:
   echo - Status: NOT STARTED
 ) > workspace\.context\PROGRESS.md

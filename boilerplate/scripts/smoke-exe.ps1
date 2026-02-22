@@ -61,23 +61,45 @@ function Resolve-AppExePath {
 
 $exePath = Resolve-AppExePath -Root $workspaceRoot -Pkg $package
 
+$profileRoot = Join-Path $workspaceRoot '.context\.smoke-profile'
+if (Test-Path $profileRoot) {
+  Remove-Item -Path $profileRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Path $profileRoot | Out-Null
+$smokeUserDataDir = Join-Path $profileRoot $package.name
+New-Item -ItemType Directory -Path $smokeUserDataDir -Force | Out-Null
+
+$previousAppData = $env:APPDATA
+$previousLocalAppData = $env:LOCALAPPDATA
+$previousUserDataDir = $env:APP_USER_DATA_DIR
+$env:APPDATA = $profileRoot
+$env:LOCALAPPDATA = $profileRoot
+$env:APP_USER_DATA_DIR = $smokeUserDataDir
+
 $start = Get-Date
-$process = Start-Process -FilePath $exePath -PassThru
-Start-Sleep -Seconds 8
+try {
+  $process = Start-Process -FilePath $exePath -PassThru
+  Start-Sleep -Seconds 8
 
-if ($process.HasExited) {
-  throw "Smoke test failed: packaged app exited early with code $($process.ExitCode)."
-}
+  if ($process.HasExited) {
+    throw "Smoke test failed: packaged app exited early with code $($process.ExitCode)."
+  }
 
-$appDataDir = Join-Path $env:APPDATA $package.name
-$dbPath = Join-Path $appDataDir 'app.db'
-$dbExists = Test-Path $dbPath
-if (-not $dbExists) {
+  $appDataDir = $smokeUserDataDir
+  $dbPath = Join-Path $appDataDir 'app.db'
+  $dbExists = Test-Path $dbPath
+  if (-not $dbExists) {
+    Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    throw "Smoke test failed: database file not found at $dbPath"
+  }
+
   Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-  throw "Smoke test failed: database file not found at $dbPath"
 }
-
-Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+finally {
+  $env:APPDATA = $previousAppData
+  $env:LOCALAPPDATA = $previousLocalAppData
+  $env:APP_USER_DATA_DIR = $previousUserDataDir
+}
 
 $evidenceDir = Join-Path $workspaceRoot '.context'
 if (-not (Test-Path $evidenceDir)) {
