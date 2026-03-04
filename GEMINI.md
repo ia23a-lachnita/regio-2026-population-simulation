@@ -556,7 +556,7 @@ Run these checks in order:
   ```bash
   cd workspace && pnpm run verify:win
   ```
-  - This command must validate data hygiene (`db:clean` + `db:reset`), input preparation evidence, build/package, executable smoke-test, and functional acceptance artifact gate.
+  - This command must validate Windows preflight readiness, data hygiene (`db:clean` + `db:reset`), input preparation evidence, build/package, executable smoke-test, functional acceptance artifact gate, criterion-type contract gate, UX baseline gate, reliability/handoff gate, and completion contract gate.
   - If this script does not exist, create it in Phase 4 before continuing.
 
 3. **Functional acceptance artifact gate (required)**
@@ -566,6 +566,26 @@ Run these checks in order:
   - Do not mark required scenarios as skipped.
   - Do not use placeholder/synthetic-only acceptance output.
   - If scenario ids are customized, store them in `workspace/.context/CRITICAL_SCENARIOS.json` (`required_scenarios` array).
+
+3b. **Criterion type contract artifact (required)**
+  - Produce `workspace/.context/CRITERION_TYPE_CONTRACT.md` with explicit contract markers:
+    - `contract: criterion-type`
+    - `type: note`, `type: ordinal`, `type: numerical`
+    - `rule: note-non-scoring`, `rule: ordinal-explicit-options`, `rule: numerical-no-overlap`
+  - For each required rule, include `result: PASS` (or equivalent pass marker).
+
+3c. **UX baseline + reliability artifacts (required)**
+  - Produce `workspace/.context/UX_BASELINE.md` with required checks and pass markers:
+    - `check: keyboard-enter-confirm`
+    - `check: keyboard-esc-cancel`
+    - `check: validation-copy-visible`
+    - `check: focus-stability`
+    - `check: note-edit-ergonomics`
+  - Produce `workspace/.context/RELIABILITY_STATUS.md` with:
+    - `inactivity_threshold_minutes: <number>`
+    - `timeout_threshold_minutes: <number>`
+    - `status: NO_HANDOFF_REQUIRED` or `status: HANDOFF_COMPLETED`
+  - If handoff occurred, also produce `workspace/.context/HANDOFF_MANIFEST.md` with `handoff_reason`, `from_agent`, `to_agent`, and `checkpoint_artifacts` entries.
 
 4. **Naming validation (required)**
   - Set production app name before final packaging (for example in `package.json` `name`, `productName`, and `build.win.executableName` where applicable)
@@ -610,6 +630,12 @@ Run these checks in order:
 - Use PowerShell-safe commands and quoting on Windows (for example `Set-Location`, `Join-Path`, quoted absolute paths).
 - Do not treat command flags (for example `robocopy /NFL`) as filesystem paths.
 - Prefer explicit PowerShell command forms over shell-ambiguous snippets.
+- For complex copy/sync/search operations, prefer workflow wrappers over raw slash-heavy one-liners:
+  - `pnpm run safe:copy:tree -- -Source <src> -Destination <dst>`
+  - `pnpm run safe:search -- -Path <path> -Pattern <pattern> -Recurse`
+  - `pnpm run safe:robocopy -- -Source <src> -Destination <dst> -Mirror`
+- Keep Copilot CLI version on a current build (minimum baseline: `0.0.332` or newer) and record the version in run evidence.
+- Emergency override (`--allow-all-paths`) is allowed only for unattended recovery, must be explicitly logged in `PROGRESS.md`, and must not be the default mode.
 - When a command fails due to shell mismatch, switch to a PowerShell-native equivalent and log the strategy change in `PROGRESS.md`.
 
 ## Agent Skills Discovery (required)
@@ -857,6 +883,7 @@ Required Phase 6 evidence:
 - Input preparation summary path (`workspace/.context/INPUT_PREP_SUMMARY.json`)
 - Input preparation status (`PASS` or `WARN`) and `pdf_converted_failed = 0`
 - Verification command and exit code (`pnpm run verify:win`)
+- Windows preflight evidence (`workspace/.context/PREFLIGHT_WIN.md`)
 - Data hygiene evidence (`workspace/.context/DB_CLEAN.md` and `workspace/.context/DB_RESET.md`)
 - Executable path tested (`workspace/release/win-unpacked/*.exe`)
 - Executable and installer names verified (real app name)
@@ -866,6 +893,13 @@ Required Phase 6 evidence:
 - Functional acceptance report path (`workspace/.context/FUNCTIONAL_ACCEPTANCE.md`)
 - Functional acceptance scenarios passed (domain-critical lifecycle flows)
 - Functional acceptance gate evidence (`workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md`)
+- Criterion type contract report (`workspace/.context/CRITERION_TYPE_CONTRACT.md`)
+- Criterion type contract gate evidence (`workspace/.context/CRITERION_TYPE_CONTRACT_GATE.md`)
+- UX baseline report (`workspace/.context/UX_BASELINE.md`)
+- UX baseline gate evidence (`workspace/.context/UX_BASELINE_GATE.md`)
+- Reliability status report (`workspace/.context/RELIABILITY_STATUS.md`)
+- Reliability gate evidence (`workspace/.context/RELIABILITY_GATE.md`)
+- Completion contract evidence (`workspace/.context/COMPLETION_CONTRACT.md`)
 - Error summary (`NONE` if no errors)
 
 Example:

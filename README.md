@@ -18,7 +18,7 @@ Related docs:
 
 1. **Drop competition files** in `/input` folder (ZIP/PDF/TXT)
 2. **Run reset:** `./reset-workspace.sh` (or `.bat` on Windows)
-3. **Start AI agent** (Claude Code, Gemini, etc.)
+3. **Start AI agent** (default lifecycle uses Claude Code or Copilot CLI)
 4. **Type:** `START` or `S`
 5. **Wait:** AI completes all phases (~60-120 min)
 6. **Submit:** Upload `/delivery` folder
@@ -28,7 +28,8 @@ Related docs:
 ## For AI Agents
 
 **Claude Code users:** Read `CLAUDE.md` or just type `START`
-**Gemini CLI users:** Read `GEMINI.md` or just type `START`
+**Copilot users:** Read `.github/copilot-instructions.md` or just type `START`
+**Gemini CLI users (optional profile):** Read `GEMINI.md` or just type `START`
 
 Both files contain aligned instructions for autonomous competition completion.
 
@@ -121,7 +122,7 @@ Inside lifecycle runs, this template is cloned under:
 
 - `iterations/iterationN/workflows/workflow-claude-code`
 - `iterations/iterationN/workflows/workflow-copilot-cli`
-- `iterations/iterationN/workflows/workflow-gemini-cli`
+- `iterations/iterationN/workflows/workflow-gemini-cli` (optional, disabled by default)
 
 Evaluation for the same iteration is performed in `iterations/iterationN/post-competition-workflow-eval`.
 
@@ -197,6 +198,7 @@ cd workspace
 pnpm install
 pnpm run db:clean
 pnpm run db:reset
+pnpm run preflight:win
 pnpm run verify:win
 ```
 
@@ -204,10 +206,25 @@ pnpm run verify:win
 ```bash
 # Inspect preparation + smoke evidence
 cat workspace/.context/INPUT_PREP_SUMMARY.json
+cat workspace/.context/PREFLIGHT_WIN.md
 cat workspace/.context/VERIFY_WIN.md
 cat workspace/.context/FUNCTIONAL_ACCEPTANCE.md
 cat workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md
+cat workspace/.context/CRITERION_TYPE_CONTRACT.md
+cat workspace/.context/CRITERION_TYPE_CONTRACT_GATE.md
+cat workspace/.context/UX_BASELINE.md
+cat workspace/.context/UX_BASELINE_GATE.md
+cat workspace/.context/RELIABILITY_STATUS.md
+cat workspace/.context/RELIABILITY_GATE.md
 cat workspace/.context/COMPLETION_CONTRACT.md
+```
+
+**Copilot permission/path false positives on Windows (e.g., `robocopy /...`):**
+```bash
+# Use safe wrappers instead of complex slash-heavy one-liners
+pnpm run safe:copy:tree -- -Source sourceDir -Destination targetDir
+pnpm run safe:search -- -Path src -Pattern "criterion" -Recurse
+pnpm run safe:robocopy -- -Source sourceDir -Destination targetDir -Mirror
 ```
 
 **AI gets interrupted:**
@@ -235,7 +252,7 @@ See `CLAUDE.md` or `GEMINI.md` for complete AI workflow.
 ## Notes
 
 - Completion quality is determined by gate evidence, not by summary language.
-- `verify:win` includes data hygiene (`db:clean`, `db:reset`) and functional acceptance evidence gate checks.
+- `verify:win` includes preflight, data hygiene (`db:clean`, `db:reset`), functional acceptance, criterion-type contract, UX baseline, reliability/handoff, and completion-contract evidence checks.
 
 ---
 

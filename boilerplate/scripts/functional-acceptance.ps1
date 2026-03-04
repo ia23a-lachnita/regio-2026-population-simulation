@@ -20,12 +20,13 @@ if ($content -match '(?i)\bskipped\b') {
 }
 
 $requiredScenarioIds = @(
-  'create-analysis',
-  'add-variant',
-  'add-criterion',
-  'edit-criterion',
-  'delete-criterion',
-  'persist-reload'
+  'criterion-note-fields',
+  'criterion-ordinal-fields',
+  'criterion-numerical-fields',
+  'numerical-range-validation',
+  'ranking-order-sync',
+  'save-validation-reason',
+  'crud-scoring-path'
 )
 
 if (Test-Path $configPath) {
@@ -52,12 +53,24 @@ if ($missing.Count -gt 0) {
   throw "Functional acceptance is missing required scenarios: $($missing -join ', ')"
 }
 
+if ($content -match '(?i)\bresult\s*:\s*fail\b|\bstatus\s*:\s*fail\b') {
+  throw "Functional acceptance artifact contains failing scenario results."
+}
+
+foreach ($scenarioId in $requiredScenarioIds) {
+  $resultPattern = "(?is)scenario\s*:\s*$([Regex]::Escape([string]$scenarioId)).{0,300}?result\s*:\s*(pass|ok|success)"
+  if ($content -notmatch $resultPattern) {
+    throw "Functional acceptance scenario '$scenarioId' is missing a pass result marker."
+  }
+}
+
 $evidencePath = Join-Path $contextDir 'FUNCTIONAL_ACCEPTANCE_GATE.md'
 @"
 # functional:acceptance:win evidence
 - command: pnpm run functional:acceptance:win
 - result: PASS
 - source_artifact: $acceptancePath
+- strict_result_validation: enabled
 - required_scenarios:
 $($requiredScenarioIds | ForEach-Object { "  - $_" } | Out-String)
 "@ | Set-Content -Path $evidencePath -Encoding UTF8

@@ -14,11 +14,18 @@
     "electron:build": "pnpm run build && electron-builder",
     "db:clean": "powershell -ExecutionPolicy Bypass -File scripts/db-clean.ps1",
     "db:reset": "powershell -ExecutionPolicy Bypass -File scripts/db-reset.ps1",
+    "preflight:win": "powershell -ExecutionPolicy Bypass -File scripts/preflight-win.ps1",
     "verify:input:prep:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-input-prep.ps1",
     "smoke:exe:win": "powershell -ExecutionPolicy Bypass -File scripts/smoke-exe.ps1",
     "functional:acceptance:win": "powershell -ExecutionPolicy Bypass -File scripts/functional-acceptance.ps1",
+    "verify:criterion:contract:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-criterion-type-contract.ps1",
+    "verify:ux:baseline:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-ux-baseline.ps1",
+    "verify:reliability:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-reliability-handoff.ps1",
     "verify:completion:contract:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-completion-contract.ps1",
-    "verify:win": "pnpm run db:clean && pnpm run db:reset && pnpm run verify:input:prep:win && pnpm run electron:build && pnpm run smoke:exe:win && pnpm run functional:acceptance:win && pnpm run verify:completion:contract:win"
+    "safe:copy:tree": "powershell -ExecutionPolicy Bypass -File scripts/safe-copy-tree.ps1",
+    "safe:search": "powershell -ExecutionPolicy Bypass -File scripts/safe-search.ps1",
+    "safe:robocopy": "powershell -ExecutionPolicy Bypass -File scripts/safe-robocopy.ps1",
+    "verify:win": "pnpm run preflight:win && pnpm run db:clean && pnpm run db:reset && pnpm run verify:input:prep:win && pnpm run electron:build && pnpm run smoke:exe:win && pnpm run functional:acceptance:win && pnpm run verify:criterion:contract:win && pnpm run verify:ux:baseline:win && pnpm run verify:reliability:win && pnpm run verify:completion:contract:win"
   },
   "build": {
     "npmRebuild": false,

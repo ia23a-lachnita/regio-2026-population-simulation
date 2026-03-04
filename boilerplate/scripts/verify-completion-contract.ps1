@@ -4,8 +4,16 @@ $workspaceRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 $contextDir = Join-Path $workspaceRoot '.context'
 
 $requiredArtifacts = @(
+  (Join-Path $contextDir 'PREFLIGHT_WIN.md'),
   (Join-Path $contextDir 'VERIFY_WIN.md'),
-  (Join-Path $contextDir 'FUNCTIONAL_ACCEPTANCE.md')
+  (Join-Path $contextDir 'FUNCTIONAL_ACCEPTANCE.md'),
+  (Join-Path $contextDir 'FUNCTIONAL_ACCEPTANCE_GATE.md'),
+  (Join-Path $contextDir 'CRITERION_TYPE_CONTRACT.md'),
+  (Join-Path $contextDir 'CRITERION_TYPE_CONTRACT_GATE.md'),
+  (Join-Path $contextDir 'UX_BASELINE.md'),
+  (Join-Path $contextDir 'UX_BASELINE_GATE.md'),
+  (Join-Path $contextDir 'RELIABILITY_STATUS.md'),
+  (Join-Path $contextDir 'RELIABILITY_GATE.md')
 )
 
 foreach ($artifact in $requiredArtifacts) {
@@ -28,6 +36,10 @@ if ($functionalContent -match '(?i)\bskipped\b') {
   throw 'Completion contract failed. FUNCTIONAL_ACCEPTANCE.md contains skipped required scenarios.'
 }
 
+if ($functionalContent -notmatch '(?i)crud[- ]scoring[- ]path|end[- ]to[- ]end') {
+  throw 'Completion contract failed. FUNCTIONAL_ACCEPTANCE.md must include at least one end-to-end CRUD + scoring path scenario.'
+}
+
 $summaryPath = Join-Path $contextDir 'FINAL_SUMMARY.md'
 if (Test-Path $summaryPath) {
   $summary = Get-Content $summaryPath -Raw
@@ -42,8 +54,7 @@ $evidencePath = Join-Path $contextDir 'COMPLETION_CONTRACT.md'
 - command: pnpm run verify:completion:contract:win
 - result: PASS
 - checked_artifacts:
-  - $($requiredArtifacts[0])
-  - $($requiredArtifacts[1])
+$(($requiredArtifacts | ForEach-Object { "  - $_" }) -join "`n")
 - summary_checked: $([bool](Test-Path $summaryPath))
 "@ | Set-Content -Path $evidencePath -Encoding UTF8
 
