@@ -27,11 +27,15 @@ $previousNodeEnv = $env:NODE_ENV
 $previousSeedDb = $env:SEED_DB
 $previousInitOnly = $env:DB_INIT_ONLY
 $previousUserData = $env:APP_USER_DATA_DIR
+$previousSeedContractPath = $env:SEED_CONTRACT_PATH
+$previousDbResetJsonPath = $env:DB_RESET_JSON_PATH
 
 $env:NODE_ENV = 'production'
 $env:SEED_DB = 'true'
 $env:DB_INIT_ONLY = '1'
 $env:APP_USER_DATA_DIR = $resetUserDataDir
+$env:SEED_CONTRACT_PATH = Join-Path $workspaceRoot '.context\SEED_CONTRACT.json'
+$env:DB_RESET_JSON_PATH = Join-Path $workspaceRoot '.context\DB_RESET.json'
 
 Push-Location $workspaceRoot
 try {
@@ -55,6 +59,8 @@ finally {
   $env:SEED_DB = $previousSeedDb
   $env:DB_INIT_ONLY = $previousInitOnly
   $env:APP_USER_DATA_DIR = $previousUserData
+  $env:SEED_CONTRACT_PATH = $previousSeedContractPath
+  $env:DB_RESET_JSON_PATH = $previousDbResetJsonPath
 }
 
 $dbPath = Join-Path $resetUserDataDir 'app.db'
@@ -62,20 +68,6 @@ if (-not (Test-Path $dbPath)) {
   throw "db:reset failed. Expected database file not found at $dbPath"
 }
 
-$evidenceDir = Join-Path $workspaceRoot '.context'
-if (-not (Test-Path $evidenceDir)) {
-  New-Item -ItemType Directory -Path $evidenceDir | Out-Null
-}
+& (Join-Path $workspaceRoot 'scripts\verify-seed-reset.ps1') -DbPath $dbPath -ProfileRoot $resetProfileRoot -UserDataDir $resetUserDataDir
 
-$evidencePath = Join-Path $evidenceDir 'DB_RESET.md'
-@"
-# db:reset evidence
-- command: pnpm run db:reset
-- result: PASS
-- seed_enabled: true
-- profile_root: $resetProfileRoot
-- user_data_dir: $resetUserDataDir
-- db_path: $dbPath
-"@ | Set-Content -Path $evidencePath -Encoding UTF8
-
-Write-Host "db:reset completed. Evidence written to $evidencePath"
+Write-Host 'db:reset completed. Row-level seed verification succeeded.'

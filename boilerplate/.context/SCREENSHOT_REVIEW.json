@@ -1,0 +1,8 @@
+{
+  "artifact": "screenshot_review",
+  "status": "NOT_STARTED",
+  "updated_by_phase": "Phase 4",
+  "incomplete": true,
+  "screenshot_root": "workspace/.context/screenshots/",
+  "reviews": []
+}

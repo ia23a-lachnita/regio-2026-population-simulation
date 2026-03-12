@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const db = require('./database.cjs');
+const { verifySeedState } = require('../scripts/verify-seed-state.cjs');
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
 if (process.env.APP_USER_DATA_DIR) {
@@ -22,6 +23,19 @@ const shouldLog = (level) => logLevels[level] >= logLevels[LOG_LEVEL];
 async function createWindow() {
   if (shouldLog('info')) console.log('[Main] Initializing database...');
   await db.initDatabase();
+
+  if (process.env.SEED_CONTRACT_PATH && process.env.DB_RESET_JSON_PATH) {
+    const dbPath = path.join(app.getPath('userData'), 'app.db');
+    const seedResult = verifySeedState({
+      dbPath,
+      contractPath: process.env.SEED_CONTRACT_PATH,
+      outputPath: process.env.DB_RESET_JSON_PATH,
+    });
+
+    if (seedResult.result !== 'PASS') {
+      throw new Error(`Seed verification failed for ${dbPath}`);
+    }
+  }
 
   if (['1', 'true', 'yes'].includes(String(process.env.DB_INIT_ONLY || '').toLowerCase())) {
     if (shouldLog('info')) console.log('[Main] DB_INIT_ONLY enabled. Database initialized, exiting.');

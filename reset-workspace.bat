@@ -61,6 +61,7 @@ echo   OK Boilerplate copied
 echo   Creating .context directory...
 if not exist workspace\.context mkdir workspace\.context
 if not exist workspace\.context\source-docs mkdir workspace\.context\source-docs
+if not exist workspace\.context\screenshots mkdir workspace\.context\screenshots
 echo   OK Context directory created
 
 echo.
@@ -81,16 +82,16 @@ echo [3/4] Creating PROGRESS.md...
   echo ## Phase 1: Extract Requirements
   echo - [ ] Read all converted markdown files
   echo - [ ] Review wireframe images
-  echo - [ ] Create REQUIREMENTS.md
+  echo - [ ] Update workspace/.context/REQUIREMENTS.md
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 2: Analyze Domain
-  echo - [ ] Read REQUIREMENTS.md
-  echo - [ ] Create DOMAIN_MODEL.md (entities, relationships^)
+  echo - [ ] Read workspace/.context/REQUIREMENTS.md
+  echo - [ ] Update workspace/.context/DOMAIN_MODEL.md (entities, relationships^)
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 3: Generate Plan
-  echo - [ ] Create IMPLEMENTATION_PLAN.md (step-by-step tasks^)
+  echo - [ ] Update workspace/.context/IMPLEMENTATION_PLAN.md (step-by-step tasks^)
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 4: Implement
@@ -98,12 +99,15 @@ echo [3/4] Creating PROGRESS.md...
   echo - [ ] Create TypeScript interfaces
   echo - [ ] Build all pages and components
   echo - [ ] Implement routing and features
+  echo - [ ] Replace scaffold entries in FUNCTIONAL_ACCEPTANCE.json, UX_BASELINE.json, CRITERION_TYPE_CONTRACT.json, and SCREENSHOT_REVIEW.json
+  echo - [ ] Update COMMAND_SAFETY.json if command-parser incidents occur
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 5: Validate
   echo - [ ] Validate schema and routes
   echo - [ ] Verify routes/pages/components exist
   echo - [ ] Confirm core functionality implemented
+  echo - [ ] Run pnpm run verify:evidence:scaffold:win before packaging
   echo - Status: NOT STARTED
   echo.
   echo ## Phase 6: Package
@@ -111,6 +115,7 @@ echo [3/4] Creating PROGRESS.md...
   echo - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe^)
   echo - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders^)
   echo - [ ] Run automated acceptance tests for critical workflows (domain-configured^)
+  echo - [ ] Capture screenshot review evidence for critical UI scenarios
   echo - [ ] Confirm DB file exists after launch
   echo - [ ] Create delivery/ structure
   echo - [ ] Generate documentation
@@ -129,6 +134,9 @@ echo [3/4] Creating PROGRESS.md...
   echo   - acceptance_exit_code:
   echo   - acceptance_report:
   echo   - acceptance_scenarios:
+  echo   - screenshot_review_artifact:
+  echo   - screenshot_directory:
+  echo   - command_safety_artifact:
   echo   - error_summary:
   echo - Status: NOT STARTED
 ) > workspace\.context\PROGRESS.md

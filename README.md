@@ -144,6 +144,7 @@ Evaluation for the same iteration is performed in `iterations/iterationN/post-co
 ✅ **Intelligent image extraction** - Only actual diagrams, filters logos
 ✅ **Domain-agnostic** - Works for any competition theme
 ✅ **Progress tracking** - PROGRESS.md shows current phase
+✅ **Evidence scaffolded early** - reset pre-creates the core `.context` templates before implementation starts
 ✅ **Simple start** - Just type "START"
 ✅ **Input reliability benchmark** - Run corpus checks across historical ZIPs
 
@@ -198,6 +199,7 @@ cd workspace
 pnpm install
 pnpm run db:clean
 pnpm run db:reset
+pnpm run verify:seed:reset:win
 pnpm run preflight:win
 pnpm run verify:win
 ```
@@ -208,14 +210,22 @@ pnpm run verify:win
 cat workspace/.context/INPUT_PREP_SUMMARY.json
 cat workspace/.context/PREFLIGHT_WIN.md
 cat workspace/.context/VERIFY_WIN.md
+cat workspace/.context/DB_RESET.json
+cat workspace/.context/DB_RESET.md
+cat workspace/.context/EVIDENCE_SCAFFOLD.md
+cat workspace/.context/FUNCTIONAL_ACCEPTANCE.json
 cat workspace/.context/FUNCTIONAL_ACCEPTANCE.md
 cat workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md
+cat workspace/.context/SCREENSHOT_REVIEW.json
+cat workspace/.context/CRITERION_TYPE_CONTRACT.json
 cat workspace/.context/CRITERION_TYPE_CONTRACT.md
 cat workspace/.context/CRITERION_TYPE_CONTRACT_GATE.md
+cat workspace/.context/UX_BASELINE.json
 cat workspace/.context/UX_BASELINE.md
 cat workspace/.context/UX_BASELINE_GATE.md
 cat workspace/.context/RELIABILITY_STATUS.md
 cat workspace/.context/RELIABILITY_GATE.md
+cat workspace/.context/COMPLETION_STATUS.json
 cat workspace/.context/COMPLETION_CONTRACT.md
 ```
 
@@ -252,7 +262,9 @@ See `CLAUDE.md` or `GEMINI.md` for complete AI workflow.
 ## Notes
 
 - Completion quality is determined by gate evidence, not by summary language.
-- `verify:win` includes preflight, data hygiene (`db:clean`, `db:reset`), functional acceptance, criterion-type contract, UX baseline, reliability/handoff, and completion-contract evidence checks.
+- `verify:win` treats machine-readable evidence as the source of truth and includes preflight, data hygiene (`db:clean`, `db:reset`), input prep, evidence scaffold validation, functional acceptance, criterion-type contract, UX baseline, reliability/handoff, and completion-contract evidence checks.
+- `pnpm run verify:evidence:scaffold:win` fails before packaging if the required `.context` templates were never created or were removed during the run.
+- `db:reset` is only considered successful when `workspace/.context/SEED_CONTRACT.json` is satisfied by actual seeded row counts.
 
 ---
 

@@ -539,6 +539,7 @@ CRITICAL: **Build success does NOT mean completion.**
 
 YOU ARE NOT DONE UNTIL ALL are true:
 1. `pnpm run verify:win` succeeds (exit code 0)
+  - This now includes `pnpm run verify:evidence:scaffold:win` before packaging.
 2. Packaged executable launches without startup error
 3. Functional acceptance gate passes for critical workflows defined by the current competition requirements
 4. Database file exists after launch
@@ -556,31 +557,46 @@ Run these checks in order:
   ```bash
   cd workspace && pnpm run verify:win
   ```
-  - This command must validate Windows preflight readiness, data hygiene (`db:clean` + `db:reset`), input preparation evidence, build/package, executable smoke-test, functional acceptance artifact gate, criterion-type contract gate, UX baseline gate, reliability/handoff gate, and completion contract gate.
+  - This command must validate Windows preflight readiness, data hygiene (`db:clean` + `db:reset` + row-level seed verification), input preparation evidence, evidence scaffold initialization, build/package, executable smoke-test, functional acceptance artifact gate, criterion-type contract gate, UX baseline gate, reliability/handoff gate, and completion contract gate.
+  - Keep the scaffold artifacts in `workspace/.context/` updated incrementally instead of creating them only at the end: `REQUIREMENTS.md`, `DOMAIN_MODEL.md`, `IMPLEMENTATION_PLAN.md`, `FUNCTIONAL_ACCEPTANCE.json`, `CRITERION_TYPE_CONTRACT.json`, `UX_BASELINE.json`, and `SCREENSHOT_REVIEW.json`.
   - If this script does not exist, create it in Phase 4 before continuing.
 
 3. **Functional acceptance artifact gate (required)**
-  - Produce `workspace/.context/FUNCTIONAL_ACCEPTANCE.md` before declaring completion.
+  - Produce `workspace/.context/FUNCTIONAL_ACCEPTANCE.json` before declaring completion. This is the gate source of truth.
+  - Optional readable report: `workspace/.context/FUNCTIONAL_ACCEPTANCE.md`.
+  - Produce `workspace/.context/SCREENSHOT_REVIEW.json` for the critical UI scenarios and store the referenced files under `workspace/.context/screenshots/`.
+  - JSON must include a `scenarios` array with entries containing scenario id (`id` or `scenario_id`) plus pass/fail result (`result` or `status`).
+  - `SCREENSHOT_REVIEW.json` must include `reviews` entries with `scenario_id`, `screenshot_path`, `expected_ui_claims`, `self_review_result`, `open_ui_concerns`, and `needs_human_review`.
   - Scenarios must be derived from `workspace/.context/REQUIREMENTS.md` and must remain app-agnostic in contract shape.
-  - For each required scenario, include an explicit line: `scenario: <scenario-id>`.
+  - If a readable report is emitted, include an explicit line per required scenario: `scenario: <scenario-id>`.
   - Do not mark required scenarios as skipped.
-  - Do not use placeholder/synthetic-only acceptance output.
-  - If scenario ids are customized, store them in `workspace/.context/CRITICAL_SCENARIOS.json` (`required_scenarios` array).
+  - Do not use placeholder/synthetic-only acceptance output in either JSON or report form.
+  - If scenario ids are customized, store them in `workspace/.context/CRITICAL_SCENARIOS.json` (`required_scenarios`, `required_ux_checks`, `required_screenshot_reviews`) or in `FUNCTIONAL_ACCEPTANCE.json.required_scenarios`.
+  - The default required screenshot-reviewed scenarios are `keyboard-esc-cancel`, `criterion-add-button-placement`, `analysis-header-layout-stability`, `note-hover-edit-visibility`, `criterion-enter-save-parity`, and `variant-ordering-behavior`.
 
 3b. **Criterion type contract artifact (required)**
-  - Produce `workspace/.context/CRITERION_TYPE_CONTRACT.md` with explicit contract markers:
-    - `contract: criterion-type`
-    - `type: note`, `type: ordinal`, `type: numerical`
-    - `rule: note-non-scoring`, `rule: ordinal-explicit-options`, `rule: numerical-no-overlap`
-  - For each required rule, include `result: PASS` (or equivalent pass marker).
+  - Produce `workspace/.context/CRITERION_TYPE_CONTRACT.json` as the gate source of truth.
+  - Optional readable report: `workspace/.context/CRITERION_TYPE_CONTRACT.md`.
+  - JSON must declare a criterion-type contract identifier and include:
+    - covered types for `note`, `ordinal`, and `numerical`
+    - `rules` entries for `note-non-scoring`, `ordinal-explicit-options`, and `numerical-no-overlap`
+  - For each required rule, include a passing `result`/`status` marker in JSON.
 
 3c. **UX baseline + reliability artifacts (required)**
-  - Produce `workspace/.context/UX_BASELINE.md` with required checks and pass markers:
-    - `check: keyboard-enter-confirm`
-    - `check: keyboard-esc-cancel`
-    - `check: validation-copy-visible`
-    - `check: focus-stability`
-    - `check: note-edit-ergonomics`
+  - Produce `workspace/.context/UX_BASELINE.json` as the gate source of truth.
+  - Optional readable report: `workspace/.context/UX_BASELINE.md`.
+  - JSON must include passing `checks` entries for:
+    - `keyboard-enter-confirm`
+    - `keyboard-esc-cancel`
+    - `validation-copy-visible`
+    - `focus-stability`
+    - `note-edit-ergonomics`
+    - `criterion-add-button-placement`
+    - `analysis-header-layout-stability`
+    - `note-hover-edit-visibility`
+    - `criterion-enter-save-parity`
+    - `variant-ordering-behavior`
+    - `focus-stability-after-input`
   - Produce `workspace/.context/RELIABILITY_STATUS.md` with:
     - `inactivity_threshold_minutes: <number>`
     - `timeout_threshold_minutes: <number>`
@@ -615,7 +631,7 @@ Run these checks in order:
 - If failures continue after 2 strategy switches, mark the phase as BLOCKED with explicit root cause and stop claiming completion.
 
 **No-placeholder policy (required):**
-- Never ship `FUNCTIONAL_ACCEPTANCE.md` or phase evidence containing `TODO`, `placeholder`, `synthetic-only`, or `hardcoded pass` markers.
+- Never ship machine-readable evidence or readable reports containing `TODO`, `placeholder`, `synthetic-only`, or `hardcoded pass` markers.
 - If evidence is incomplete, report BLOCKED instead of claiming completion.
 - If `workspace/.context/FINAL_SUMMARY.md` is produced, include a `Known Limitations` section.
 
@@ -884,21 +900,27 @@ Required Phase 6 evidence:
 - Input preparation status (`PASS` or `WARN`) and `pdf_converted_failed = 0`
 - Verification command and exit code (`pnpm run verify:win`)
 - Windows preflight evidence (`workspace/.context/PREFLIGHT_WIN.md`)
-- Data hygiene evidence (`workspace/.context/DB_CLEAN.md` and `workspace/.context/DB_RESET.md`)
+- Data hygiene evidence (`workspace/.context/DB_CLEAN.md`, `workspace/.context/DB_RESET.json`, and `workspace/.context/DB_RESET.md`)
 - Executable path tested (`workspace/release/win-unpacked/*.exe`)
 - Executable and installer names verified (real app name)
 - Launch timestamp
 - Database file path and existence check
 - Functional acceptance command + exit code (`pnpm run functional:acceptance:win`)
-- Functional acceptance report path (`workspace/.context/FUNCTIONAL_ACCEPTANCE.md`)
+- Functional acceptance JSON path (`workspace/.context/FUNCTIONAL_ACCEPTANCE.json`)
+- Functional acceptance report path (`workspace/.context/FUNCTIONAL_ACCEPTANCE.md`, if emitted)
+- Screenshot review artifact (`workspace/.context/SCREENSHOT_REVIEW.json`)
+- Screenshot directory (`workspace/.context/screenshots/`)
 - Functional acceptance scenarios passed (domain-critical lifecycle flows)
 - Functional acceptance gate evidence (`workspace/.context/FUNCTIONAL_ACCEPTANCE_GATE.md`)
-- Criterion type contract report (`workspace/.context/CRITERION_TYPE_CONTRACT.md`)
+- Criterion type contract JSON path (`workspace/.context/CRITERION_TYPE_CONTRACT.json`)
+- Criterion type contract report (`workspace/.context/CRITERION_TYPE_CONTRACT.md`, if emitted)
 - Criterion type contract gate evidence (`workspace/.context/CRITERION_TYPE_CONTRACT_GATE.md`)
-- UX baseline report (`workspace/.context/UX_BASELINE.md`)
+- UX baseline JSON path (`workspace/.context/UX_BASELINE.json`)
+- UX baseline report (`workspace/.context/UX_BASELINE.md`, if emitted)
 - UX baseline gate evidence (`workspace/.context/UX_BASELINE_GATE.md`)
 - Reliability status report (`workspace/.context/RELIABILITY_STATUS.md`)
 - Reliability gate evidence (`workspace/.context/RELIABILITY_GATE.md`)
+- Completion status artifact (`workspace/.context/COMPLETION_STATUS.json`)
 - Completion contract evidence (`workspace/.context/COMPLETION_CONTRACT.md`)
 - Error summary (`NONE` if no errors)
 

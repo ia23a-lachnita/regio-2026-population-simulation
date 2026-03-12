@@ -27,6 +27,7 @@ pnpm run electron:build
 # Reset database state (clean + deterministic init/seed)
 pnpm run db:clean
 pnpm run db:reset
+pnpm run verify:seed:reset:win
 
 # Full Windows verification (build + package + smoke launch)
 pnpm run verify:win
@@ -67,21 +68,36 @@ boilerplate/
 - Use `pnpm run verify:win` before claiming completion.
 - This command runs:
   - deterministic data hygiene (`db:clean`, `db:reset`),
+  - row-level seed verification against `workspace/.context/SEED_CONTRACT.json`,
   - input-preparation gate,
   - build/package,
   - executable smoke launch,
   - functional acceptance artifact gate,
+  - criterion-type contract gate,
+  - UX baseline gate,
   - completion-contract quality checks.
 - Packaged output location: `release/win-unpacked/`.
 
 ### Functional Acceptance Artifact Contract
 
-- Create `workspace/.context/FUNCTIONAL_ACCEPTANCE.md` before final completion.
-- Include required scenario ids as lines in this format:
+- Create `workspace/.context/FUNCTIONAL_ACCEPTANCE.json` before final completion. This is the gate source of truth.
+- Optional readable report: `workspace/.context/FUNCTIONAL_ACCEPTANCE.md`.
+- Create `workspace/.context/SCREENSHOT_REVIEW.json` for critical UI scenarios and store referenced image files under `workspace/.context/screenshots/`.
+- The JSON must include a `scenarios` array with required scenario ids and pass/fail results.
+- `SCREENSHOT_REVIEW.json` must include `reviews` entries with `scenario_id`, `screenshot_path`, `expected_ui_claims`, `self_review_result`, `open_ui_concerns`, and `needs_human_review`.
+- If a readable report is emitted, include required scenario ids as lines in this format:
   - `scenario: <scenario-id>`
-- Derive scenarios from current requirements (not hard-coded app-specific defaults).
-- Do not include placeholder/synthetic-only markers and do not skip required scenarios.
+- Derive scenarios from current requirements and keep `workspace/.context/CRITICAL_SCENARIOS.json` aligned when you customize the required catalog.
+- Do not include placeholder/synthetic-only markers and do not skip required scenarios in either JSON or report form.
+- Required screenshot-reviewed scenarios now include at least `keyboard-esc-cancel`, `criterion-add-button-placement`, `analysis-header-layout-stability`, `note-hover-edit-visibility`, `criterion-enter-save-parity`, and `variant-ordering-behavior`.
+- Required UX checks now include `criterion-add-button-placement`, `analysis-header-layout-stability`, `note-hover-edit-visibility`, `criterion-enter-save-parity`, `variant-ordering-behavior`, and `focus-stability-after-input` in addition to the earlier keyboard and validation checks.
 - If `workspace/.context/FINAL_SUMMARY.md` is present, include a `Known Limitations` section.
+
+### Seed Reset Contract
+
+- `workspace/.context/SEED_CONTRACT.json` defines which seeded tables must exist after reset.
+- `pnpm run db:reset` must emit both `workspace/.context/DB_RESET.json` and `workspace/.context/DB_RESET.md`.
+- Reset is not successful unless the configured tables meet their minimum row counts.
 
 ## Customization
 

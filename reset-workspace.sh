@@ -77,6 +77,7 @@ echo "  ✓ Boilerplate copied"
 # Create context directory structure
 echo "  Creating .context directory..."
 mkdir -p workspace/.context/source-docs
+mkdir -p workspace/.context/screenshots
 echo "  ✓ Context directory created"
 
 echo ""
@@ -97,16 +98,16 @@ Update this file after completing each phase!
 ## Phase 1: Extract Requirements
 - [ ] Read all converted markdown files
 - [ ] Review wireframe images
-- [ ] Create REQUIREMENTS.md
+- [ ] Update workspace/.context/REQUIREMENTS.md
 - Status: NOT STARTED
 
 ## Phase 2: Analyze Domain
-- [ ] Read REQUIREMENTS.md
-- [ ] Create DOMAIN_MODEL.md (entities, relationships)
+- [ ] Read workspace/.context/REQUIREMENTS.md
+- [ ] Update workspace/.context/DOMAIN_MODEL.md (entities, relationships)
 - Status: NOT STARTED
 
 ## Phase 3: Generate Plan
-- [ ] Create IMPLEMENTATION_PLAN.md (step-by-step tasks)
+- [ ] Update workspace/.context/IMPLEMENTATION_PLAN.md (step-by-step tasks)
 - Status: NOT STARTED
 
 ## Phase 4: Implement
@@ -114,12 +115,15 @@ Update this file after completing each phase!
 - [ ] Create TypeScript interfaces
 - [ ] Build all pages and components
 - [ ] Implement routing and features
+- [ ] Replace scaffold entries in FUNCTIONAL_ACCEPTANCE.json, UX_BASELINE.json, CRITERION_TYPE_CONTRACT.json, and SCREENSHOT_REVIEW.json
+- [ ] Update COMMAND_SAFETY.json if command-parser incidents occur
 - Status: NOT STARTED
 
 ## Phase 5: Validate
 - [ ] Validate schema and routes
 - [ ] Verify routes/pages/components exist
 - [ ] Confirm core functionality implemented
+- [ ] Run pnpm run verify:evidence:scaffold:win before packaging
 - Status: NOT STARTED
 
 ## Phase 6: Package
@@ -127,6 +131,7 @@ Update this file after completing each phase!
 - [ ] Test packaged executable launch (workspace/release/win-unpacked/*.exe)
 - [ ] Verify executable/installer names use real app name (no boilerplate/template placeholders)
 - [ ] Run automated acceptance tests for critical workflows (domain-configured)
+- [ ] Capture screenshot review evidence for critical UI scenarios
 - [ ] Confirm DB file exists after launch
 - [ ] Create delivery/ structure
 - [ ] Generate documentation
@@ -145,6 +150,9 @@ Update this file after completing each phase!
   - acceptance_exit_code: 
   - acceptance_report: 
   - acceptance_scenarios: 
+  - screenshot_review_artifact: 
+  - screenshot_directory: 
+  - command_safety_artifact: 
   - error_summary: 
 - Status: NOT STARTED
 EOF

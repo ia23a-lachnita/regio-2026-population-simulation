@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "required_tables": [
+    {
+      "table": "items",
+      "min_rows": 3,
+      "sample_column": "name",
+      "sample_limit": 3,
+      "description": "Default boilerplate seed rows for the example schema. Replace this contract when you replace the schema."
+    }
+  ]
+}
