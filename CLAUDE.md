@@ -82,16 +82,22 @@ Work through these phases in order. Update `workspace/.context/PROGRESS.md` afte
 
 ### Phase 1: Extract Requirements
 **Input:** `workspace/.context/source-docs/` (converted markdown files)
-**Output:** `workspace/.context/REQUIREMENTS.md`
+**Output:** `workspace/.context/REQUIREMENTS.md` AND `workspace/.context/DESIGN_CONTEXT.md`
 
-Read the converted requirements documents from `workspace/.context/source-docs/` and synthesize them into a single structured markdown file with these sections:
+Read the converted requirements documents from `workspace/.context/source-docs/` and synthesize them into a single structured markdown file (`workspace/.context/REQUIREMENTS.md`) with these sections:
 - **Competition Name:** [Extract from document]
 - **Objective:** What the application should accomplish
 - **Core Features:** List all required functionality (with sub-features)
-- **Database Requirements:** Tables needed (with all columns and relationships)
+- **Database Requirements:** Tables needed. **CRITICAL:** Ensure the application can be comprehensively tested by automatically generating and inserting supplementary mock data for ALL domain entities. Maintain any competition-provided JSON seed data exactly, but augment it with additional dummy records (at least 5 per table) to cover the full application scope immediately upon setup.
 - **UI Requirements:** Pages/screens to build (reference wireframe images)
 - **Technical Constraints:** Tech stack, time limits
 - **Deliverables:** What to submit (source, exe, database, docs)
+
+Also, dynamically generate `workspace/.context/DESIGN_CONTEXT.md` based on requirements, including:
+- **Brand Personality:** Tone, mood, and target audience
+- **Aesthetic Constraints:** Theme (e.g. minimalist, brutalist, modern)
+- DO NOT PROMPT THE USER OR PAUSE FOR UI FEEDBACK. Decide this autonomously.
+
 
 **Format Example:**
 ```markdown
@@ -542,6 +548,8 @@ YOU ARE NOT DONE UNTIL ALL are true:
   - This now includes `pnpm run verify:evidence:scaffold:win` before packaging.
 2. Packaged executable launches without startup error
 3. Functional acceptance gate passes for critical workflows defined by the current competition requirements
+  - Include the generation of a `MANUAL_TESTING_PLAN.md` file formatted strictly as a checklist (no conversational text) covering all competition requirements.
+  - Run an automated local UI screenshot script using **Playwright's native Electron support** (`@playwright/test` using `_electron.launch`) to capture core screens and save to `delivery/test-evidence/`. Use Vision to autonomously fix CSS/layout issues based on `DESIGN_CONTEXT.md` before finalizing.
 4. Database file exists after launch
 5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
 6. Acceptance artifacts are not placeholders/synthetic-only and contain no skipped required scenarios
@@ -640,6 +648,12 @@ Run these checks in order:
 ---
 
 ## Technical Context (Boilerplate Patterns)
+
+**"Anti-Anchoring" Directive for UI:**
+  - The existing boilerplate UI is merely functional "developer art", mostly a placeholder skeleton.
+  - You are strictly commanded to **aggressively overwrite, delete, and replace** the boilerplate's base CSS/Tailwind classes rather than safely blending into them. 
+  - Utilize local skills at `boilerplate/.claude/skills/frontend-design` and `polish` to ensure non-generic, high-quality, distinctive design driven by `DESIGN_CONTEXT.md`.
+
 
 ## Windows Command Guardrails (required)
 
