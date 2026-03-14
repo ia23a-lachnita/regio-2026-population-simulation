@@ -63,9 +63,12 @@ $exePath = Resolve-AppExePath -Root $workspaceRoot -Pkg $package
 
 $profileRoot = Join-Path $workspaceRoot '.context\.smoke-profile'
 if (Test-Path $profileRoot) {
-  Remove-Item -Path $profileRoot -Recurse -Force
+  Remove-Item -Path $profileRoot -Recurse -Force -ErrorAction SilentlyContinue
+  if (Test-Path $profileRoot) {
+    Write-Host "Warning: Could not fully delete .smoke-profile due to file locks."
+  }
 }
-New-Item -ItemType Directory -Path $profileRoot | Out-Null
+New-Item -ItemType Directory -Path $profileRoot -Force | Out-Null
 $smokeUserDataDir = Join-Path $profileRoot $package.name
 New-Item -ItemType Directory -Path $smokeUserDataDir -Force | Out-Null
 
@@ -88,12 +91,14 @@ try {
   $appDataDir = $smokeUserDataDir
   $dbPath = Join-Path $appDataDir 'app.db'
   $dbExists = Test-Path $dbPath
+  
+  $appName = (Get-Item $exePath).BaseName
   if (-not $dbExists) {
-    Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+    Get-Process -Name $appName -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     throw "Smoke test failed: database file not found at $dbPath"
   }
 
-  Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+  Get-Process -Name $appName -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 finally {
   $env:APPDATA = $previousAppData

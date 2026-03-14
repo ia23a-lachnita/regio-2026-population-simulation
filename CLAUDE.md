@@ -27,6 +27,10 @@ When the user says **"START"**, **"S"**, **"start"**, **"begin"**, or **"go"**:
 3. If YES: Read it and continue from the last incomplete phase
 4. Proceed autonomously through all phases without asking for permission
 
+## Tool Rules
+
+- **Prevent Stale Reads:** Before using file writing or string replacement tools, you MUST immediately perform a fresh file read of the target file. This aligns your tool cache and prevents "File has been modified since read..." or "File has not been read yet" errors.
+
 ## Your Workflow (Sequential Phases)
 
 Work through these phases in order. Update `workspace/.context/PROGRESS.md` after completing each phase.
@@ -88,7 +92,7 @@ Read the converted requirements documents from `workspace/.context/source-docs/`
 - **Competition Name:** [Extract from document]
 - **Objective:** What the application should accomplish
 - **Core Features:** List all required functionality (with sub-features)
-- **Database Requirements:** Tables needed. **CRITICAL:** Ensure the application can be comprehensively tested by automatically generating and inserting supplementary mock data for ALL domain entities. Maintain any competition-provided JSON seed data exactly, but augment it with additional dummy records (at least 5 per table) to cover the full application scope immediately upon setup.
+- **Database Requirements:** Tables needed. **CRITICAL:** Ensure the application can be comprehensively tested by automatically generating and inserting supplementary mock data for ALL domain entities. Maintain any competition-provided JSON seed data exactly, but augment it with realistic, longitudinal seed data. Specifically, mandate at least 5-10 records with varied historical timestamps per entity when generating seeding logic for applications that feature charts or historical tracking.
 - **UI Requirements:** Pages/screens to build (reference wireframe images)
 - **Technical Constraints:** Tech stack, time limits
 - **Deliverables:** What to submit (source, exe, database, docs)
@@ -96,6 +100,7 @@ Read the converted requirements documents from `workspace/.context/source-docs/`
 Also, dynamically generate `workspace/.context/DESIGN_CONTEXT.md` based on requirements, including:
 - **Brand Personality:** Tone, mood, and target audience
 - **Aesthetic Constraints:** Theme (e.g. minimalist, brutalist, modern)
+- **Contrast Guardrails:** Implement a strict rule requiring high-contrast color pairings for floating elements, modals, and popups (e.g. text-white on dark backgrounds, text-gray-900 on light backgrounds) and verify contrast ratios.
 - DO NOT PROMPT THE USER OR PAUSE FOR UI FEEDBACK. Decide this autonomously.
 
 
@@ -578,7 +583,7 @@ Run these checks in order:
   - `SCREENSHOT_REVIEW.json` must include `reviews` entries with `scenario_id`, `screenshot_path`, `expected_ui_claims`, `self_review_result`, `open_ui_concerns`, and `needs_human_review`.
   - Scenarios must be derived from `workspace/.context/REQUIREMENTS.md` and must remain app-agnostic in contract shape.
   - If a readable report is emitted, include an explicit line per required scenario: `scenario: <scenario-id>`.
-  - Do not mark required scenarios as skipped.
+  - Do not mark required scenarios as skipped. NEVER use the exact literal string "skipped" anywhere in the report or JSON, as it will trigger a hard gate failure. Ensure full coverage instead.
   - Do not use placeholder/synthetic-only acceptance output in either JSON or report form.
   - If scenario ids are customized, store them in `workspace/.context/CRITICAL_SCENARIOS.json` (`required_scenarios`, `required_ux_checks`, `required_screenshot_reviews`) or in `FUNCTIONAL_ACCEPTANCE.json.required_scenarios`.
   - The default required screenshot-reviewed scenarios are `keyboard-esc-cancel`, `criterion-add-button-placement`, `analysis-header-layout-stability`, `note-hover-edit-visibility`, `criterion-enter-save-parity`, and `variant-ordering-behavior`.
