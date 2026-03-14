@@ -921,7 +921,7 @@ export default function App() {
                     <div
                       key={c.id}
                       onClick={(e) => handleSelectCitizen(c.id, e.ctrlKey, e.shiftKey)}
-                      className={`px-2 py-1 text-sm cursor-pointer truncate ${
+                      className={`px-2 py-1 text-sm cursor-pointer truncate select-none ${
                         selectedCitizenId === c.id
                           ? 'bg-yellow-600 text-white'
                           : selectedCitizenIds.has(c.id)
