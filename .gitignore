@@ -45,6 +45,7 @@ workspace/dist/
 workspace/release/
 workspace/.context/screenshots/
 workspace/.context/.screenshot-profile/
+workspace/.context/.smoke-profile/
 workspace/out/
 
 # Delivery - track source and executable metadata, ignore large binaries
