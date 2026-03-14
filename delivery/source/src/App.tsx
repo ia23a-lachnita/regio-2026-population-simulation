@@ -111,6 +111,7 @@ function MapCanvas({
   citizens,
   simStates,
   selectedCitizenId,
+  selectedCitizenIds,
   selectedLocationId,
   pathDisplay,
 }: {
@@ -118,6 +119,7 @@ function MapCanvas({
   citizens: Citizen[];
   simStates: CitizenSimState[];
   selectedCitizenId: string | null;
+  selectedCitizenIds: Set<string>;
   selectedLocationId: string | null;
   pathDisplay: PathDisplay;
 }) {
@@ -175,6 +177,45 @@ function MapCanvas({
     };
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  // Middle mouse button drag to pan
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+    const onDown = (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      dragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    };
+    const onMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      const sz = canvasSizeRef.current;
+      const sc = sz / MAP_SIZE;
+      const cz = zoomRef.current;
+      const dx = (e.clientX - lastX) / (sc * cz);
+      const dy = (e.clientY - lastY) / (sc * cz);
+      lastX = e.clientX;
+      lastY = e.clientY;
+      setViewCenter(prev => clampViewCenter(prev.x - dx, prev.y - dy, zoomRef.current));
+    };
+    const onUp = (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      dragging = false;
+    };
+    canvas.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      canvas.removeEventListener('mousedown', onDown);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
   }, []);
 
   const handleZoomIn = useCallback(() => {
@@ -248,7 +289,7 @@ function MapCanvas({
       const headLen = Math.max(8, fontSize * 0.7);
       const citizensToShow = pathDisplay === 'all'
         ? citizens
-        : citizens.filter(c => c.id === selectedCitizenId);
+        : citizens.filter(c => selectedCitizenIds.has(c.id));
 
       for (const citizen of citizensToShow) {
         if (citizen.schedule.length === 0) continue;
@@ -302,11 +343,17 @@ function MapCanvas({
       if (!simState) continue;
       const x = toSX(simState.position.x);
       const y = toSY(simState.position.y);
-      const isSelected = citizen.id === selectedCitizenId;
-      if (isSelected) {
-        ctx.fillStyle = 'rgba(234, 179, 8, 0.4)';
+      const isActive = citizen.id === selectedCitizenId;
+      const isInSelection = selectedCitizenIds.has(citizen.id);
+      if (isActive) {
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.5)';
         ctx.beginPath();
-        ctx.arc(x, y, fontSize * 1.2, 0, Math.PI * 2);
+        ctx.arc(x, y, fontSize * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (isInSelection) {
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
+        ctx.beginPath();
+        ctx.arc(x, y, fontSize * 1.1, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.fillText(citizen.icon, x, y);
@@ -318,7 +365,7 @@ function MapCanvas({
     ctx.strokeStyle = '#4a7c4a';
     ctx.lineWidth = 2;
     ctx.strokeRect(mapLeft, mapTop, mapW, mapH);
-  }, [locations, citizens, simStates, selectedCitizenId, selectedLocationId, canvasSize, pathDisplay, zoom, viewCenter]);
+  }, [locations, citizens, simStates, selectedCitizenId, selectedCitizenIds, selectedLocationId, canvasSize, pathDisplay, zoom, viewCenter]);
 
   return (
     <div ref={containerRef} className="flex-1 relative flex items-center justify-center bg-gray-950 p-2">
@@ -452,7 +499,13 @@ export default function App() {
 
   // Selection state
   const [selectedCitizenId, setSelectedCitizenId] = useState<string | null>(null);
+  const [selectedCitizenIds, setSelectedCitizenIds] = useState<Set<string>>(new Set());
+  const [lastClickedCitizenId, setLastClickedCitizenId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+
+  // Panel widths for resizable panels
+  const [leftWidth, setLeftWidth] = useState(208);
+  const [rightWidth, setRightWidth] = useState(320);
 
   // Simulation state
   const [simDate, setSimDate] = useState<Date>(() => {
@@ -586,17 +639,57 @@ export default function App() {
   };
 
   // Select citizen
-  const handleSelectCitizen = (id: string) => {
-    if (isPlaying) return; // disable editing while playing
-    if (unsavedChanges && editingCitizen) {
-      if (!confirm('You have unsaved changes. Discard them?')) return;
+  const handleSelectCitizen = (id: string, ctrlKey = false, shiftKey = false) => {
+    if (isPlaying) return;
+
+    if (shiftKey && lastClickedCitizenId) {
+      // Range select — add range to existing selection
+      const ids = citizens.map(c => c.id);
+      const fromIdx = ids.indexOf(lastClickedCitizenId);
+      const toIdx = ids.indexOf(id);
+      const [start, end] = fromIdx <= toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+      setSelectedCitizenIds(prev => {
+        const next = new Set(prev);
+        for (let i = start; i <= end; i++) next.add(ids[i]);
+        return next;
+      });
+      setSelectedCitizenId(id);
+      const citizen = citizens.find(c => c.id === id);
+      if (citizen) setEditingCitizen({ ...citizen, schedule: citizen.schedule.map(s => ({ ...s })) });
+      setUnsavedChanges(false);
+      setEditingScheduleIndex(null);
+    } else if (ctrlKey) {
+      // Toggle this citizen
+      setSelectedCitizenIds(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+      setSelectedCitizenId(id);
+      setLastClickedCitizenId(id);
+      setSelectedLocationId(null);
+      const citizen = citizens.find(c => c.id === id);
+      if (citizen) setEditingCitizen({ ...citizen, schedule: citizen.schedule.map(s => ({ ...s })) });
+      setUnsavedChanges(false);
+      setEditingScheduleIndex(null);
+    } else {
+      // Single select — clear all others
+      if (unsavedChanges && editingCitizen) {
+        if (!confirm('You have unsaved changes. Discard them?')) return;
+      }
+      setSelectedCitizenIds(new Set([id]));
+      setSelectedCitizenId(id);
+      setLastClickedCitizenId(id);
+      setSelectedLocationId(null);
+      const citizen = citizens.find(c => c.id === id);
+      if (citizen) setEditingCitizen({ ...citizen, schedule: citizen.schedule.map(s => ({ ...s })) });
+      setUnsavedChanges(false);
+      setEditingScheduleIndex(null);
     }
-    setSelectedCitizenId(id);
-    setSelectedLocationId(null);
-    const citizen = citizens.find(c => c.id === id);
-    if (citizen) setEditingCitizen({ ...citizen, schedule: citizen.schedule.map(s => ({ ...s })) });
-    setUnsavedChanges(false);
-    setEditingScheduleIndex(null);
   };
 
   // Select location
@@ -606,6 +699,7 @@ export default function App() {
       if (!confirm('You have unsaved changes. Discard them?')) return;
     }
     setSelectedLocationId(id);
+    setSelectedCitizenIds(new Set());
     setSelectedCitizenId(null);
     setEditingCitizen(null);
     const location = locations.find(l => l.id === id);
@@ -793,12 +887,15 @@ export default function App() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel */}
-        <div className={`${leftCollapsed ? 'w-8' : 'w-52'} flex flex-col border-r border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}>
+        <div
+          className={`relative flex flex-col border-r border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}
+          style={{ width: leftCollapsed ? 32 : leftWidth }}
+        >
           {leftCollapsed ? (
             /* Collapsed: single toggle strip */
             <button
               onClick={() => setLeftCollapsed(false)}
-              className="flex-1 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700"
+              className="flex-1 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-200 hover:text-white"
               title="Expand panel"
             >
               <span className="text-lg">›</span>
@@ -809,7 +906,7 @@ export default function App() {
               <div className="p-2 border-b border-gray-700">
                 <div className="flex items-center justify-between mb-1">
                   <div className="text-xs font-semibold text-gray-400 uppercase">File</div>
-                  <button onClick={() => setLeftCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">‹</button>
+                  <button onClick={() => setLeftCollapsed(true)} className="bg-gray-600 hover:bg-gray-500 text-white text-sm px-2 py-0.5 rounded font-bold" title="Collapse panel">‹</button>
                 </div>
                 <button onClick={handleOpen} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">📂 Open</button>
                 <button onClick={handleSave} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">💾 Save</button>
@@ -823,9 +920,13 @@ export default function App() {
                   {citizens.map(c => (
                     <div
                       key={c.id}
-                      onClick={() => handleSelectCitizen(c.id)}
+                      onClick={(e) => handleSelectCitizen(c.id, e.ctrlKey, e.shiftKey)}
                       className={`px-2 py-1 text-sm cursor-pointer truncate ${
-                        selectedCitizenId === c.id ? 'bg-yellow-700 text-white' : 'hover:bg-gray-700 text-gray-200'
+                        selectedCitizenId === c.id
+                          ? 'bg-yellow-600 text-white'
+                          : selectedCitizenIds.has(c.id)
+                          ? 'bg-yellow-900 text-yellow-200'
+                          : 'hover:bg-gray-700 text-gray-200'
                       } ${isPlaying ? 'cursor-not-allowed opacity-70' : ''}`}
                     >
                       {c.icon} {c.firstname} {c.lastname}
@@ -851,6 +952,27 @@ export default function App() {
                   ))}
                 </div>
               </div>
+              {!leftCollapsed && (
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 bg-transparent z-10 group"
+                  style={{ userSelect: 'none' }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const startX = e.clientX;
+                    const startW = leftWidth;
+                    const onMove = (ev: MouseEvent) => {
+                      const newW = Math.max(120, Math.min(400, startW + ev.clientX - startX));
+                      setLeftWidth(newW);
+                    };
+                    const onUp = () => {
+                      document.removeEventListener('mousemove', onMove);
+                      document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                />
+              )}
             </>
           )}
         </div>
@@ -861,26 +983,78 @@ export default function App() {
           citizens={citizens}
           simStates={simStates}
           selectedCitizenId={selectedCitizenId}
+          selectedCitizenIds={selectedCitizenIds}
           selectedLocationId={selectedLocationId}
           pathDisplay={pathDisplay}
         />
 
         {/* Right panel - Citizen or Location editor */}
-        <div className={`${rightCollapsed ? 'w-8' : 'w-80'} flex flex-col border-l border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}>
+        <div
+          className={`relative flex flex-col border-l border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}
+          style={{ width: rightCollapsed ? 32 : rightWidth }}
+        >
           {rightCollapsed ? (
             <button
               onClick={() => setRightCollapsed(false)}
-              className="flex-1 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700"
+              className="flex-1 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-200 hover:text-white"
               title="Expand panel"
             >
               <span className="text-lg">‹</span>
             </button>
           ) : editingCitizen ? (
             <>
+              {!rightCollapsed && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 bg-transparent z-10"
+                  style={{ userSelect: 'none' }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const startX = e.clientX;
+                    const startW = rightWidth;
+                    const onMove = (ev: MouseEvent) => {
+                      const newW = Math.max(200, Math.min(500, startW - (ev.clientX - startX)));
+                      setRightWidth(newW);
+                    };
+                    const onUp = () => {
+                      document.removeEventListener('mousemove', onMove);
+                      document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                />
+              )}
+              {selectedCitizenIds.size > 1 && (
+                <div className="border-b border-gray-700 bg-gray-750">
+                  <div className="text-xs font-semibold text-gray-400 uppercase px-3 pt-2 pb-1">
+                    Selected ({selectedCitizenIds.size})
+                  </div>
+                  <div className="max-h-24 overflow-y-auto">
+                    {citizens.filter(c => selectedCitizenIds.has(c.id)).map(c => (
+                      <div
+                        key={c.id}
+                        onClick={() => {
+                          setSelectedCitizenId(c.id);
+                          setEditingCitizen({ ...c, schedule: c.schedule.map(s => ({ ...s })) });
+                          setUnsavedChanges(false);
+                          setEditingScheduleIndex(null);
+                        }}
+                        className={`px-3 py-1 text-sm cursor-pointer truncate ${
+                          selectedCitizenId === c.id
+                            ? 'bg-yellow-600 text-white'
+                            : 'hover:bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        {c.icon} {c.firstname} {c.lastname}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="p-3 border-b border-gray-700">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-xs font-semibold text-gray-400 uppercase">Selected Person</div>
-                  <button onClick={() => setRightCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">›</button>
+                  <button onClick={() => setRightCollapsed(true)} className="bg-gray-600 hover:bg-gray-500 text-white text-sm px-2 py-0.5 rounded font-bold" title="Collapse panel">›</button>
                 </div>
 
                 {/* Icon */}
@@ -989,9 +1163,30 @@ export default function App() {
             </>
           ) : editingLocation ? (
             <div className="p-3">
+              {!rightCollapsed && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-500 bg-transparent z-10"
+                  style={{ userSelect: 'none' }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const startX = e.clientX;
+                    const startW = rightWidth;
+                    const onMove = (ev: MouseEvent) => {
+                      const newW = Math.max(200, Math.min(500, startW - (ev.clientX - startX)));
+                      setRightWidth(newW);
+                    };
+                    const onUp = () => {
+                      document.removeEventListener('mousemove', onMove);
+                      document.removeEventListener('mouseup', onUp);
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                />
+              )}
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xs font-semibold text-gray-400 uppercase">Location Editor</div>
-                <button onClick={() => setRightCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">›</button>
+                <button onClick={() => setRightCollapsed(true)} className="bg-gray-600 hover:bg-gray-500 text-white text-sm px-2 py-0.5 rounded font-bold" title="Collapse panel">›</button>
               </div>
 
               <div className="flex items-center gap-3 mb-3">
