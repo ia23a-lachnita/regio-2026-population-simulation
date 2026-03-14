@@ -12,9 +12,17 @@ if (process.env.APP_USER_DATA_DIR) {
 // Suppress Electron security warnings in development
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = 'true';
 
-// Disable GPU acceleration issues and autofill errors
-app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion');
+// Disable hardware acceleration for VM/remote desktop compatibility
+// Must be called before app is ready
+app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion,UseSkiaRenderer');
 app.commandLine.appendSwitch('disable-dev-shm-usage');
+app.commandLine.appendSwitch('no-sandbox');
 
 // Log level: 'debug', 'info', 'warn', 'error' (default: 'info')
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
