@@ -549,7 +549,8 @@ YOU ARE NOT DONE UNTIL ALL are true:
 2. Packaged executable launches without startup error
 3. Functional acceptance gate passes for critical workflows defined by the current competition requirements
   - Include the generation of a `MANUAL_TESTING_PLAN.md` file formatted strictly as a checklist (no conversational text) covering all competition requirements.
-  - Run an automated local UI screenshot script using **Playwright's native Electron support** (`@playwright/test` using `_electron.launch`) to capture core screens and save to `delivery/test-evidence/`. Use Vision to autonomously fix CSS/layout issues based on `DESIGN_CONTEXT.md` before finalizing.
+    - Run an automated local UI screenshot script using **Playwright's native Electron support** (`@playwright/test` using `_electron.launch`) to capture core screens and save to `workspace/.context/screenshots/`.
+    - **Vision Check (CRITICAL):** You MUST explicitly pass these captured `.png` screenshots to your vision capabilities. Describe the visual layout, spacing, and styling. Compare it to the `DESIGN_CONTEXT.md` and the frontend-design skills. If the application resembles the default boilerplate theme (generic buttons, unstyled layouts), you MUST apply CSS/Tailwind fixes, rebuild, and re-capture the screenshots before continuing. Describe this review in `SCREENSHOT_REVIEW.json`.
 4. Database file exists after launch
 5. Deliverable naming uses the real competition app name (no `boilerplate`, `template`, or placeholder app names)
 6. Acceptance artifacts are not placeholders/synthetic-only and contain no skipped required scenarios
@@ -658,10 +659,7 @@ Run these checks in order:
 **"Anti-Anchoring" Directive for UI:**
   - The existing boilerplate UI is merely functional "developer art", mostly a placeholder skeleton.
   - You are strictly commanded to **aggressively overwrite, delete, and replace** the boilerplate's base CSS/Tailwind classes rather than safely blending into them. 
-  - Utilize local skills at `boilerplate/.claude/skills/frontend-design` and `polish` to ensure non-generic, high-quality, distinctive design driven by `DESIGN_CONTEXT.md`.
-
-
-## Windows Command Guardrails (required)
+  - You MUST READ AND STRICTLY APPLY the design guidelines located at `workspace/.claude/skills/frontend-design/SKILL.md` (and its reference documents) and `workspace/.claude/skills/polish/SKILL.md` to ensure non-generic, high-quality, distinctive design driven by `DESIGN_CONTEXT.md`.
 
 - Use PowerShell-safe commands and quoting on Windows (for example `Set-Location`, `Join-Path`, quoted absolute paths).
 - Do not treat command flags (for example `robocopy /NFL`) as filesystem paths.
