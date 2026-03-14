@@ -78,6 +78,33 @@ function drawArrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: nu
   ctx.stroke();
 }
 
+type PathDisplay = 'none' | 'selected' | 'all';
+
+function clampViewCenter(cx: number, cy: number, zoom: number): { x: number; y: number } {
+  const half = MAP_SIZE / (2 * zoom);
+  return {
+    x: Math.max(half, Math.min(MAP_SIZE - half, cx)),
+    y: Math.max(half, Math.min(MAP_SIZE - half, cy)),
+  };
+}
+
+function buildPathWaypoints(
+  citizen: Citizen,
+  locMap: Map<string, Location>,
+  toSX: (wx: number) => number,
+  toSY: (wy: number) => number,
+): { x: number; y: number }[] {
+  const home = locMap.get(citizen.home);
+  const pts: { x: number; y: number }[] = [];
+  if (home) pts.push({ x: toSX(home.coord.x), y: toSY(home.coord.y) });
+  for (const ev of citizen.schedule) {
+    const loc = locMap.get(ev.location);
+    if (loc) pts.push({ x: toSX(loc.coord.x), y: toSY(loc.coord.y) });
+  }
+  if (home && pts.length > 1) pts.push({ x: toSX(home.coord.x), y: toSY(home.coord.y) });
+  return pts;
+}
+
 // Map canvas component
 function MapCanvas({
   locations,
@@ -85,18 +112,28 @@ function MapCanvas({
   simStates,
   selectedCitizenId,
   selectedLocationId,
-  showPaths,
+  pathDisplay,
 }: {
   locations: Location[];
   citizens: Citizen[];
   simStates: CitizenSimState[];
   selectedCitizenId: string | null;
   selectedLocationId: string | null;
-  showPaths: boolean;
+  pathDisplay: PathDisplay;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState(400);
+  const [zoom, setZoom] = useState(1.0);
+  const [viewCenter, setViewCenter] = useState({ x: MAP_SIZE / 2, y: MAP_SIZE / 2 });
+
+  // Refs for wheel handler (avoids stale closure)
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const viewCenterRef = useRef(viewCenter);
+  viewCenterRef.current = viewCenter;
+  const canvasSizeRef = useRef(canvasSize);
+  canvasSizeRef.current = canvasSize;
 
   useEffect(() => {
     const updateSize = () => {
@@ -111,6 +148,55 @@ function MapCanvas({
     return () => ro.disconnect();
   }, []);
 
+  // Ctrl+wheel zoom
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      const sz = canvasSizeRef.current;
+      const sc = sz / MAP_SIZE;
+      const cz = zoomRef.current;
+      const cc = viewCenterRef.current;
+      // World coordinate under mouse
+      const worldX = (mouseX - sz / 2) / (sc * cz) + cc.x;
+      const worldY = (mouseY - sz / 2) / (sc * cz) + cc.y;
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const newZoom = Math.max(1, Math.min(10, cz * factor));
+      const rawCx = worldX - (mouseX - sz / 2) / (sc * newZoom);
+      const rawCy = worldY - (mouseY - sz / 2) / (sc * newZoom);
+      const clamped = clampViewCenter(rawCx, rawCy, newZoom);
+      setZoom(newZoom);
+      setViewCenter(clamped);
+    };
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => canvas.removeEventListener('wheel', handleWheel);
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setZoom(prev => {
+      const nz = Math.min(10, prev * 1.25);
+      setViewCenter(vc => clampViewCenter(vc.x, vc.y, nz));
+      return nz;
+    });
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoom(prev => {
+      const nz = Math.max(1, prev / 1.25);
+      if (nz <= 1.001) {
+        setViewCenter({ x: MAP_SIZE / 2, y: MAP_SIZE / 2 });
+        return 1;
+      }
+      setViewCenter(vc => clampViewCenter(vc.x, vc.y, nz));
+      return nz;
+    });
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -118,58 +204,60 @@ function MapCanvas({
     if (!ctx) return;
 
     const scale = canvasSize / MAP_SIZE;
+    const toSX = (wx: number) => (wx - viewCenter.x) * scale * zoom + canvasSize / 2;
+    const toSY = (wy: number) => (wy - viewCenter.y) * scale * zoom + canvasSize / 2;
 
-    // Clear
-    ctx.clearRect(0, 0, canvasSize, canvasSize);
-
-    // Draw map background
-    ctx.fillStyle = '#1a2e1a';
+    // Canvas background (outside map area)
+    ctx.fillStyle = '#111827';
     ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-    // Draw grid
+    // Map area bounds in screen space
+    const mapLeft = toSX(0);
+    const mapTop = toSY(0);
+    const mapW = toSX(MAP_SIZE) - mapLeft;
+    const mapH = toSY(MAP_SIZE) - mapTop;
+
+    // Map background
+    ctx.fillStyle = '#1a2e1a';
+    ctx.fillRect(mapLeft, mapTop, mapW, mapH);
+
+    // Clip to map area so nothing renders outside
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(mapLeft, mapTop, mapW, mapH);
+    ctx.clip();
+
+    // Grid
     ctx.strokeStyle = '#2d4a2d';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 10; i++) {
-      const pos = i * canvasSize / 10;
-      ctx.beginPath();
-      ctx.moveTo(pos, 0);
-      ctx.lineTo(pos, canvasSize);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, pos);
-      ctx.lineTo(canvasSize, pos);
-      ctx.stroke();
+      const gx = toSX(i * MAP_SIZE / 10);
+      const gy = toSY(i * MAP_SIZE / 10);
+      ctx.beginPath(); ctx.moveTo(gx, mapTop); ctx.lineTo(gx, mapTop + mapH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mapLeft, gy); ctx.lineTo(mapLeft + mapW, gy); ctx.stroke();
     }
-
-    // Draw border
-    ctx.strokeStyle = '#4a7c4a';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, canvasSize - 2, canvasSize - 2);
 
     const fontSize = Math.max(12, Math.min(20, canvasSize / 30));
     ctx.font = `${fontSize}px serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw schedule path arrows for selected citizen
-    if (showPaths && selectedCitizenId) {
-      const selectedCitizen = citizens.find(c => c.id === selectedCitizenId);
-      if (selectedCitizen && selectedCitizen.schedule.length > 0) {
-        const locMap = new Map(locations.map(l => [l.name, l]));
-        // Build waypoints: home → each schedule location in order → (wraps back to home)
-        const home = locMap.get(selectedCitizen.home);
-        const waypoints: { x: number; y: number }[] = [];
-        if (home) waypoints.push({ x: home.coord.x * scale, y: home.coord.y * scale });
-        for (const ev of selectedCitizen.schedule) {
-          const loc = locMap.get(ev.location);
-          if (loc) waypoints.push({ x: loc.coord.x * scale, y: loc.coord.y * scale });
-        }
-        // Close the loop back to home
-        if (home && waypoints.length > 1) waypoints.push({ x: home.coord.x * scale, y: home.coord.y * scale });
+    // Path arrows
+    if (pathDisplay !== 'none') {
+      const locMap = new Map(locations.map(l => [l.name, l]));
+      const headLen = Math.max(8, fontSize * 0.7);
+      const citizensToShow = pathDisplay === 'all'
+        ? citizens
+        : citizens.filter(c => c.id === selectedCitizenId);
 
-        ctx.strokeStyle = 'rgba(251, 191, 36, 0.85)'; // amber
-        ctx.lineWidth = 2;
-        const headLen = Math.max(8, fontSize * 0.7);
+      for (const citizen of citizensToShow) {
+        if (citizen.schedule.length === 0) continue;
+        const isSelected = citizen.id === selectedCitizenId;
+        ctx.strokeStyle = isSelected
+          ? 'rgba(251, 191, 36, 0.9)'   // amber for selected
+          : 'rgba(148, 163, 184, 0.5)'; // muted slate for others
+        ctx.lineWidth = isSelected ? 2 : 1.5;
+        const waypoints = buildPathWaypoints(citizen, locMap, toSX, toSY);
         for (let i = 0; i < waypoints.length - 1; i++) {
           const from = waypoints[i];
           const to = waypoints[i + 1];
@@ -177,7 +265,6 @@ function MapCanvas({
           const dy = to.y - from.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 1) continue;
-          // Shorten line so arrowhead doesn't overlap icons
           const offset = fontSize * 0.8;
           const ux = dx / dist;
           const uy = dy / dist;
@@ -194,52 +281,70 @@ function MapCanvas({
       }
     }
 
-    // Draw locations
+    // Locations
     for (const loc of locations) {
-      const x = loc.coord.x * scale;
-      const y = loc.coord.y * scale;
+      const x = toSX(loc.coord.x);
+      const y = toSY(loc.coord.y);
       const isSelected = loc.id === selectedLocationId;
-
       if (isSelected) {
         ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
         ctx.beginPath();
         ctx.arc(x, y, fontSize * 1.2, 0, Math.PI * 2);
         ctx.fill();
       }
-
       ctx.fillText(loc.icon, x, y);
     }
 
-    // Draw citizens at their current positions
+    // Citizens
     const stateMap = new Map(simStates.map(s => [s.citizenId, s]));
     for (const citizen of citizens) {
       const simState = stateMap.get(citizen.id);
       if (!simState) continue;
-
-      const x = simState.position.x * scale;
-      const y = simState.position.y * scale;
+      const x = toSX(simState.position.x);
+      const y = toSY(simState.position.y);
       const isSelected = citizen.id === selectedCitizenId;
-
       if (isSelected) {
         ctx.fillStyle = 'rgba(234, 179, 8, 0.4)';
         ctx.beginPath();
         ctx.arc(x, y, fontSize * 1.2, 0, Math.PI * 2);
         ctx.fill();
       }
-
       ctx.fillText(citizen.icon, x, y);
     }
-  }, [locations, citizens, simStates, selectedCitizenId, selectedLocationId, canvasSize, showPaths]);
+
+    ctx.restore();
+
+    // Map border
+    ctx.strokeStyle = '#4a7c4a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(mapLeft, mapTop, mapW, mapH);
+  }, [locations, citizens, simStates, selectedCitizenId, selectedLocationId, canvasSize, pathDisplay, zoom, viewCenter]);
 
   return (
-    <div ref={containerRef} className="flex-1 flex items-center justify-center bg-gray-950 p-2">
+    <div ref={containerRef} className="flex-1 relative flex items-center justify-center bg-gray-950 p-2">
       <canvas
         ref={canvasRef}
         width={canvasSize}
         height={canvasSize}
         style={{ width: canvasSize, height: canvasSize }}
-        className="cursor-pointer"
+        className="cursor-crosshair"
       />
+      {/* Zoom controls — top-left corner of map area */}
+      <div className="absolute top-4 left-4 flex flex-col gap-1 select-none">
+        <button
+          onClick={handleZoomIn}
+          title="Zoom in (Ctrl+Scroll)"
+          className="w-8 h-8 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded text-sm flex items-center justify-center text-white font-bold"
+        >🔍+</button>
+        <button
+          onClick={handleZoomOut}
+          title="Zoom out (Ctrl+Scroll)"
+          className="w-8 h-8 bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded text-sm flex items-center justify-center text-white font-bold"
+        >🔍−</button>
+        {zoom > 1.05 && (
+          <div className="text-center text-xs text-gray-400 font-mono">{Math.round(zoom * 100)}%</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -365,7 +470,9 @@ export default function App() {
   const [simStates, setSimStates] = useState<CitizenSimState[]>([]);
 
   // Map display options
-  const [showPaths, setShowPaths] = useState(true);
+  const [pathDisplay, setPathDisplay] = useState<PathDisplay>('selected');
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   // Editor state
   const [editingCitizen, setEditingCitizen] = useState<Citizen | null>(null);
@@ -658,13 +765,16 @@ export default function App() {
         <div className="text-gray-300 font-mono text-sm">
           {formatDate(simDate)} {formatTime(simDate)}
         </div>
-        <button
-          onClick={() => setShowPaths(p => !p)}
-          title="Toggle path arrows for selected citizen"
-          className={`px-3 py-1 rounded text-sm font-medium ${showPaths ? 'bg-amber-600 hover:bg-amber-500 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-300'}`}
+        <select
+          value={pathDisplay}
+          onChange={e => setPathDisplay(e.target.value as PathDisplay)}
+          title="Path display mode"
+          className="px-2 py-1 bg-gray-700 border border-gray-600 text-gray-200 rounded text-sm cursor-pointer"
         >
-          {showPaths ? '→ Paths On' : '→ Paths Off'}
-        </button>
+          <option value="none">→ Paths: Off</option>
+          <option value="selected">→ Paths: Selected</option>
+          <option value="all">→ Paths: All</option>
+        </select>
         <button
           onClick={stepSim}
           disabled={isPlaying}
@@ -683,50 +793,66 @@ export default function App() {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel */}
-        <div className="w-52 flex flex-col border-r border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden">
-          {/* File menu */}
-          <div className="p-2 border-b border-gray-700">
-            <div className="text-xs font-semibold text-gray-400 uppercase mb-1">File</div>
-            <button onClick={handleOpen} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">📂 Open</button>
-            <button onClick={handleSave} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">💾 Save</button>
-            <button onClick={handleExit} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">🚪 Exit</button>
-          </div>
-
-          {/* People list */}
-          <div className="flex flex-col flex-1 min-h-0 border-b border-gray-700">
-            <div className="text-xs font-semibold text-gray-400 uppercase px-2 py-1">People ({citizens.length})</div>
-            <div className="overflow-y-auto flex-1">
-              {citizens.map(c => (
-                <div
-                  key={c.id}
-                  onClick={() => handleSelectCitizen(c.id)}
-                  className={`px-2 py-1 text-sm cursor-pointer truncate ${
-                    selectedCitizenId === c.id ? 'bg-yellow-700 text-white' : 'hover:bg-gray-700 text-gray-200'
-                  } ${isPlaying ? 'cursor-not-allowed opacity-70' : ''}`}
-                >
-                  {c.icon} {c.firstname} {c.lastname}
+        <div className={`${leftCollapsed ? 'w-8' : 'w-52'} flex flex-col border-r border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}>
+          {leftCollapsed ? (
+            /* Collapsed: single toggle strip */
+            <button
+              onClick={() => setLeftCollapsed(false)}
+              className="flex-1 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700"
+              title="Expand panel"
+            >
+              <span className="text-lg">›</span>
+            </button>
+          ) : (
+            <>
+              {/* Collapse button + File menu */}
+              <div className="p-2 border-b border-gray-700">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-xs font-semibold text-gray-400 uppercase">File</div>
+                  <button onClick={() => setLeftCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">‹</button>
                 </div>
-              ))}
-            </div>
-          </div>
+                <button onClick={handleOpen} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">📂 Open</button>
+                <button onClick={handleSave} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">💾 Save</button>
+                <button onClick={handleExit} className="w-full text-left px-2 py-1 text-sm text-gray-200 hover:bg-gray-700 rounded">🚪 Exit</button>
+              </div>
 
-          {/* Locations list */}
-          <div className="flex flex-col flex-1 min-h-0">
-            <div className="text-xs font-semibold text-gray-400 uppercase px-2 py-1">Locations ({locations.length})</div>
-            <div className="overflow-y-auto flex-1">
-              {locations.map(l => (
-                <div
-                  key={l.id}
-                  onClick={() => handleSelectLocation(l.id)}
-                  className={`px-2 py-1 text-sm cursor-pointer truncate ${
-                    selectedLocationId === l.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-200'
-                  } ${isPlaying ? 'cursor-not-allowed opacity-70' : ''}`}
-                >
-                  {l.icon} {l.name}
+              {/* People list */}
+              <div className="flex flex-col flex-1 min-h-0 border-b border-gray-700">
+                <div className="text-xs font-semibold text-gray-400 uppercase px-2 py-1">People ({citizens.length})</div>
+                <div className="overflow-y-auto flex-1">
+                  {citizens.map(c => (
+                    <div
+                      key={c.id}
+                      onClick={() => handleSelectCitizen(c.id)}
+                      className={`px-2 py-1 text-sm cursor-pointer truncate ${
+                        selectedCitizenId === c.id ? 'bg-yellow-700 text-white' : 'hover:bg-gray-700 text-gray-200'
+                      } ${isPlaying ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      {c.icon} {c.firstname} {c.lastname}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+
+              {/* Locations list */}
+              <div className="flex flex-col flex-1 min-h-0">
+                <div className="text-xs font-semibold text-gray-400 uppercase px-2 py-1">Locations ({locations.length})</div>
+                <div className="overflow-y-auto flex-1">
+                  {locations.map(l => (
+                    <div
+                      key={l.id}
+                      onClick={() => handleSelectLocation(l.id)}
+                      className={`px-2 py-1 text-sm cursor-pointer truncate ${
+                        selectedLocationId === l.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-700 text-gray-200'
+                      } ${isPlaying ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      {l.icon} {l.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Map center */}
@@ -736,15 +862,26 @@ export default function App() {
           simStates={simStates}
           selectedCitizenId={selectedCitizenId}
           selectedLocationId={selectedLocationId}
-          showPaths={showPaths}
+          pathDisplay={pathDisplay}
         />
 
         {/* Right panel - Citizen or Location editor */}
-        <div className="w-80 flex flex-col border-l border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden">
-          {editingCitizen ? (
+        <div className={`${rightCollapsed ? 'w-8' : 'w-80'} flex flex-col border-l border-gray-700 bg-gray-800 flex-shrink-0 overflow-hidden transition-all duration-150`}>
+          {rightCollapsed ? (
+            <button
+              onClick={() => setRightCollapsed(false)}
+              className="flex-1 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700"
+              title="Expand panel"
+            >
+              <span className="text-lg">‹</span>
+            </button>
+          ) : editingCitizen ? (
             <>
               <div className="p-3 border-b border-gray-700">
-                <div className="text-xs font-semibold text-gray-400 uppercase mb-2">Selected Person</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold text-gray-400 uppercase">Selected Person</div>
+                  <button onClick={() => setRightCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">›</button>
+                </div>
 
                 {/* Icon */}
                 <div className="flex items-center gap-3 mb-3">
@@ -852,7 +989,10 @@ export default function App() {
             </>
           ) : editingLocation ? (
             <div className="p-3">
-              <div className="text-xs font-semibold text-gray-400 uppercase mb-2">Location Editor</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-gray-400 uppercase">Location Editor</div>
+                <button onClick={() => setRightCollapsed(true)} className="text-gray-500 hover:text-white text-xs px-1" title="Collapse panel">›</button>
+              </div>
 
               <div className="flex items-center gap-3 mb-3">
                 <button
