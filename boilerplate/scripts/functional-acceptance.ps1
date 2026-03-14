@@ -208,6 +208,11 @@ foreach ($scenarioId in $requiredScreenshotReviews) {
     throw "Functional acceptance gate failed. Screenshot review '$scenarioId' references missing file '$resolvedScreenshotPath'."
   }
 
+  $screenshotFileInfo = Get-Item $resolvedScreenshotPath
+  if ($screenshotFileInfo.Length -lt 10KB) {
+    throw "Functional acceptance gate failed. Screenshot file '$resolvedScreenshotPath' for scenario '$scenarioId' is too small ($($screenshotFileInfo.Length) bytes). It must be at least 10KB to prevent hallucinated 1x1 deliverables."
+  }
+
   if ($null -eq $openUiConcerns) {
     throw "Functional acceptance gate failed. Screenshot review '$scenarioId' is missing open_ui_concerns."
   }

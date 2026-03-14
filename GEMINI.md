@@ -633,6 +633,12 @@ Run these checks in order:
 
 **If ANY check fails:** debug and fix; do not mark Phase 6 complete.
 
+**Strict Error Handling & Packaging Rules (Electron):**
+- **No Empty Catch Blocks:** Never use empty `try {} catch(e) {}` blocks. All caught errors during initialization MUST log to a file or standard output, and the application must render a fallback error screen rather than a frozen UI.
+- **Production Asset Paths:** Electron-builder bundles the app into an `.asar` archive. Do not hardcode paths to local workspace folders like `.context` within the runtime execution scope of `/src` or `/electron` for production. 
+- **Database & User Data:** Mandate the use of `app.getPath('userData')` for all runtime database creation and modification.
+- **Static Assets:** If seed data or static assets from outside the `src` folder are required at runtime, configure `extraResources` in `package.json` and construct paths using `process.resourcesPath`, never `__dirname` relative to `.context`.
+
 **Error-burst policy (required):**
 - If 3 consecutive tool/script failures occur in the same phase, stop repeating the same approach.
 - Switch strategy (different tool/command/path), log the change in PROGRESS.md, and retry.
