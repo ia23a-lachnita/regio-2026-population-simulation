@@ -1,0 +1,52 @@
+{
+  "artifact": "critical_scenarios",
+  "status": "PASS",
+  "updated_by_phase": "Phase 4",
+  "incomplete": false,
+  "required_scenarios": [
+    "world-load-json",
+    "world-save-json",
+    "citizen-edit-schedule",
+    "location-edit-coords",
+    "simulation-step",
+    "simulation-play-pause",
+    "schedule-time-calc",
+    "schedule-validation-invalid",
+    "citizen-home-display",
+    "criterion-note-fields",
+    "criterion-ordinal-fields",
+    "criterion-numerical-fields",
+    "numerical-range-validation",
+    "ranking-order-sync",
+    "save-validation-reason",
+    "crud-scoring-path",
+    "keyboard-esc-cancel",
+    "criterion-add-button-placement",
+    "analysis-header-layout-stability",
+    "note-hover-edit-visibility",
+    "criterion-enter-save-parity",
+    "variant-ordering-behavior",
+    "focus-stability-after-input"
+  ],
+  "required_ux_checks": [
+    "keyboard-enter-confirm",
+    "keyboard-esc-cancel",
+    "validation-copy-visible",
+    "focus-stability",
+    "note-edit-ergonomics",
+    "criterion-add-button-placement",
+    "analysis-header-layout-stability",
+    "note-hover-edit-visibility",
+    "criterion-enter-save-parity",
+    "variant-ordering-behavior",
+    "focus-stability-after-input"
+  ],
+  "required_screenshot_reviews": [
+    "keyboard-esc-cancel",
+    "criterion-add-button-placement",
+    "analysis-header-layout-stability",
+    "note-hover-edit-visibility",
+    "criterion-enter-save-parity",
+    "variant-ordering-behavior"
+  ]
+}

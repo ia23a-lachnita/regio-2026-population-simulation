@@ -1,0 +1,78 @@
+{
+  "name": "population-simulation-prototype",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev:seed": "concurrently \"pnpm run dev\" \"wait-on http://localhost:5173 && cross-env SEED_DB=true electron .\"",
+    "electron:build": "pnpm run build && electron-builder",
+    "db:clean": "powershell -ExecutionPolicy Bypass -File scripts/db-clean.ps1",
+    "db:reset": "powershell -ExecutionPolicy Bypass -File scripts/db-reset.ps1",
+    "verify:seed:reset:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-seed-reset.ps1",
+    "preflight:win": "powershell -ExecutionPolicy Bypass -File scripts/preflight-win.ps1",
+    "verify:input:prep:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-input-prep.ps1",
+    "verify:evidence:scaffold:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-evidence-scaffold.ps1",
+    "verify:safe:commands:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-safe-command-usage.ps1",
+    "smoke:exe:win": "powershell -ExecutionPolicy Bypass -File scripts/smoke-exe.ps1",
+    "functional:acceptance:win": "powershell -ExecutionPolicy Bypass -File scripts/functional-acceptance.ps1",
+    "verify:criterion:contract:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-criterion-type-contract.ps1",
+    "verify:ux:baseline:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-ux-baseline.ps1",
+    "verify:reliability:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-reliability-handoff.ps1",
+    "verify:completion:contract:win": "powershell -ExecutionPolicy Bypass -File scripts/verify-completion-contract.ps1",
+    "safe:copy:tree": "powershell -ExecutionPolicy Bypass -File scripts/safe-copy-tree.ps1",
+    "safe:search": "powershell -ExecutionPolicy Bypass -File scripts/safe-search.ps1",
+    "safe:robocopy": "powershell -ExecutionPolicy Bypass -File scripts/safe-robocopy.ps1",
+    "verify:win": "pnpm run preflight:win && pnpm run db:clean && pnpm run db:reset && pnpm run verify:seed:reset:win && pnpm run verify:input:prep:win && pnpm run verify:evidence:scaffold:win && pnpm run verify:safe:commands:win && pnpm run electron:build && pnpm run smoke:exe:win && pnpm run functional:acceptance:win && pnpm run verify:criterion:contract:win && pnpm run verify:ux:baseline:win && pnpm run verify:reliability:win && pnpm run verify:completion:contract:win"
+  },
+  "build": {
+    "npmRebuild": false,
+    "productName": "Population Simulation Prototype",
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "signAndEditExecutable": false,
+      "executableName": "PopulationSimulation"
+    }
+  },
+  "dependencies": {
+    "better-sqlite3": "^9.4.3",
+    "bindings": "^1.5.0",
+    "clsx": "^2.1.0",
+    "file-uri-to-path": "^1.0.0",
+    "lucide-react": "^0.363.0",
+    "mysql2": "^3.9.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.22.3",
+    "tailwind-merge": "^2.2.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "concurrently": "^8.2.2",
+    "cross-env": "^10.1.0",
+    "electron": "^29.1.6",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0",
+    "wait-on": "^7.2.0"
+  }
+}

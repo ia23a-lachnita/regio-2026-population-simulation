@@ -1,0 +1,40 @@
+﻿# functional:acceptance:win evidence
+- command: pnpm run functional:acceptance:win
+- result: PASS
+- source_artifact: C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\FUNCTIONAL_ACCEPTANCE.json
+- report_artifact: C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\FUNCTIONAL_ACCEPTANCE.md
+- screenshot_review_artifact: C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\SCREENSHOT_REVIEW.json
+- strict_result_validation: enabled
+- required_scenarios:
+  - world-load-json
+  - world-save-json
+  - citizen-edit-schedule
+  - location-edit-coords
+  - simulation-step
+  - simulation-play-pause
+  - schedule-time-calc
+  - schedule-validation-invalid
+  - citizen-home-display
+  - criterion-note-fields
+  - criterion-ordinal-fields
+  - criterion-numerical-fields
+  - numerical-range-validation
+  - ranking-order-sync
+  - save-validation-reason
+  - crud-scoring-path
+  - keyboard-esc-cancel
+  - criterion-add-button-placement
+  - analysis-header-layout-stability
+  - note-hover-edit-visibility
+  - criterion-enter-save-parity
+  - variant-ordering-behavior
+  - focus-stability-after-input
+
+- required_screenshot_reviews:
+  - keyboard-esc-cancel
+  - criterion-add-button-placement
+  - analysis-header-layout-stability
+  - note-hover-edit-visibility
+  - criterion-enter-save-parity
+  - variant-ordering-behavior
+

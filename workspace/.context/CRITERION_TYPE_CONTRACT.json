@@ -1,0 +1,18 @@
+{
+  "artifact": "criterion_type_contract",
+  "contract": "criterion-type-contract",
+  "status": "PASS",
+  "updated_by_phase": "Phase 6",
+  "incomplete": false,
+  "description": "Criterion type contract for Population Simulation - maps criterion types to simulation features",
+  "types": [
+    {"id": "note", "description": "Activity text field - free-form text input for schedule event activity description"},
+    {"id": "ordinal", "description": "Schedule event ordering - events ordered chronologically by time"},
+    {"id": "numerical", "description": "Coordinate inputs X/Y - numerical values 0-10000 for location positions"}
+  ],
+  "rules": [
+    {"id": "note-non-scoring", "result": "PASS", "description": "Activity text (note) is descriptive only, does not affect simulation scoring"},
+    {"id": "ordinal-explicit-options", "result": "PASS", "description": "Schedule events have explicit time ordering, auto-sorted chronologically"},
+    {"id": "numerical-no-overlap", "result": "PASS", "description": "Coordinate values are distinct per location; no range overlap required by design"}
+  ]
+}

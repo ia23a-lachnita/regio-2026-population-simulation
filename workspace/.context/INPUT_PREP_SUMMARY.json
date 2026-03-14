@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "input_dir": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\input",
+  "output_dir": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\workspace\\.context\\source-docs",
+  "zip_files_found": 1,
+  "zip_files_extracted": 1,
+  "pdf_files_found": 2,
+  "pdf_converted_success": 2,
+  "pdf_converted_failed": 0,
+  "images_extracted_total": 9,
+  "json_files_copied": 3,
+  "visual_gate": {
+    "expect_mode": "auto",
+    "gate_mode": "fail",
+    "expected_visuals": true,
+    "status": "PASS",
+    "message": ""
+  },
+  "pdf_results": [
+    {
+      "success": true,
+      "pdf": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\input\\extracted\\competition\\competition_skill9_2026.pdf",
+      "markdown": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\workspace\\.context\\source-docs\\competition_skill9_2026.md",
+      "images": 8,
+      "pages": 11
+    },
+    {
+      "success": true,
+      "pdf": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\input\\extracted\\competition\\documents\\wireframes.pdf",
+      "markdown": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\workspace\\.context\\source-docs\\wireframes.md",
+      "images": 1,
+      "pages": 1
+    }
+  ]
+}

@@ -39,9 +39,16 @@ __pycache__/
 venv/
 ENV/
 
-# Workspace (AI-generated, recreated on reset)
-workspace/
-delivery/
+# Workspace - track source, ignore generated/binary artifacts
+workspace/node_modules/
+workspace/dist/
+workspace/release/
+workspace/.context/screenshots/
+workspace/.context/.screenshot-profile/
+workspace/out/
+
+# Delivery - track source and executable metadata, ignore large binaries
+delivery/executable/
 
 # Input folder contents (user competition files)
 # Keep the folder itself but ignore all contents

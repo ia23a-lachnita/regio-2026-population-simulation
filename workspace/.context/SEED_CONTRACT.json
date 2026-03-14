@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "description": "Seed contract for Population Simulation Prototype. App uses in-memory world state; only minimal app_settings table seeded.",
+  "required_tables": [
+    {
+      "table": "app_settings",
+      "min_rows": 3,
+      "sample_column": "key",
+      "sample_limit": 3,
+      "description": "Application metadata settings"
+    }
+  ]
+}

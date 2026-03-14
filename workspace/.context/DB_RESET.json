@@ -1,0 +1,23 @@
+{
+  "artifact": "db_reset",
+  "result": "PASS",
+  "db_path": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\workspace\\.context\\.db-reset-profile\\Population Simulation Prototype\\app.db",
+  "contract_path": "C:\\Users\\xursc\\projects\\competition-2026\\competition-regio\\workspace\\.context\\SEED_CONTRACT.json",
+  "contract_version": 1,
+  "required_tables": [
+    {
+      "table": "app_settings",
+      "min_rows": 3,
+      "actual_rows": 3,
+      "exists": true,
+      "passed": true,
+      "sample_column": "key",
+      "sample_values": [
+        "app_name",
+        "schema_version",
+        "version"
+      ],
+      "description": "Application metadata settings"
+    }
+  ]
+}

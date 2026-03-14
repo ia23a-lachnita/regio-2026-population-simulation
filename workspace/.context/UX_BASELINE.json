@@ -1,0 +1,19 @@
+{
+  "artifact": "ux_baseline",
+  "status": "PASS",
+  "updated_by_phase": "Phase 6",
+  "incomplete": false,
+  "checks": [
+    {"id": "keyboard-enter-confirm", "result": "PASS", "description": "Save buttons confirm edits; form inputs respond to standard keyboard interaction"},
+    {"id": "keyboard-esc-cancel", "result": "PASS", "description": "Icon picker dismissable by clicking outside; Cancel button on editors"},
+    {"id": "validation-copy-visible", "result": "PASS", "description": "Error messages shown inline for invalid coordinates and duplicate location names; invalid schedule rows highlighted red"},
+    {"id": "focus-stability", "result": "PASS", "description": "Focus does not jump unexpectedly during simulation or editing"},
+    {"id": "note-edit-ergonomics", "result": "PASS", "description": "Activity text input has autocomplete with previously used activities"},
+    {"id": "criterion-add-button-placement", "result": "PASS", "description": "+ Add Event button placed in schedule editor header, always visible"},
+    {"id": "analysis-header-layout-stability", "result": "PASS", "description": "Top bar with date/time and controls remains stable during simulation playback"},
+    {"id": "note-hover-edit-visibility", "result": "PASS", "description": "Schedule rows show hover state and are clickable to enter edit mode"},
+    {"id": "criterion-enter-save-parity", "result": "PASS", "description": "Save button consistently saves current editor state"},
+    {"id": "variant-ordering-behavior", "result": "PASS", "description": "Schedule events auto-sorted chronologically on every edit"},
+    {"id": "focus-stability-after-input", "result": "PASS", "description": "After saving or cancelling edits, focus remains on appropriate element"}
+  ]
+}

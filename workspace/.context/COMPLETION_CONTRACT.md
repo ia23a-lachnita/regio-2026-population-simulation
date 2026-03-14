@@ -1,0 +1,24 @@
+﻿# verify:completion:contract:win evidence
+- command: pnpm run verify:completion:contract:win
+- result: PASS
+- workflow_status: PASS
+- product_status: PASS
+- open_p0_issues: none
+- checked_artifacts:
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\PREFLIGHT_WIN.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\VERIFY_WIN.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\DB_CLEAN.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\DB_RESET.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\FUNCTIONAL_ACCEPTANCE_GATE.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\CRITERION_TYPE_CONTRACT_GATE.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\UX_BASELINE_GATE.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\RELIABILITY_STATUS.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\RELIABILITY_GATE.md
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\DB_RESET.json
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\FUNCTIONAL_ACCEPTANCE.json
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\CRITERION_TYPE_CONTRACT.json
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\UX_BASELINE.json
+  - C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\SCREENSHOT_REVIEW.json
+
+- completion_status_artifact: C:\Users\xursc\projects\competition-2026\competition-regio\workspace\.context\COMPLETION_STATUS.json
+- summary_checked: False
